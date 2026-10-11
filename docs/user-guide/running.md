@@ -17,7 +17,7 @@ nextflow run /PATH/TO/ScaleMethyl \
 | `-c` | Optional Nextflow configuration for your system: executor, queues, resource limits, paths |
 | `-resume` | Reuse the results of tasks that already completed in a previous run of the same command |
 
-Nextflow options start with a single dash (`-profile`); workflow parameters start with two dashes (`--outDir`). Any parameter from the YAML file can also be given (or overridden) on the command line, e.g. `--samples samples.foo.csv`.
+See the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html) for all `nextflow run` options. Nextflow options start with a single dash (`-profile`); workflow parameters start with two dashes (`--outDir`). Any parameter from the YAML file can also be given (or overridden) on the command line, e.g. `--samples samples.foo.csv`.
 
 ## Parameters file
 

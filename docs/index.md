@@ -2,7 +2,7 @@
 
 ScaleMethyl is a [Nextflow](https://www.nextflow.io) workflow for single-cell DNA methylation libraries made by combinatorial indexing. It takes sequencing data (an Illumina run folder or fastq files) to per-cell methylation calls, genome-bin matrices and QC reports.
 
-This copy is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1). It adds library structures and documentation for **sciMETv3** libraries (Nichols et al. 2025, *Cell Genomics* 5:100726).
+This copy is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at [github.com/ScaleBio/ScaleMethyl](https://github.com/ScaleBio/ScaleMethyl). It adds library structures and documentation for **sciMETv3** libraries (Nichols et al. 2025, *Cell Genomics* 5:100726).
 
 ## Supported libraries
 
