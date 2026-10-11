@@ -40,7 +40,7 @@ script:
 	othreads = 2
 """
     # Touch the index files to update the timestamp for bwa-meth
-    touch -d \"\$(date -R -r $index/${fastaName}.bwameth.c2t) - 2 hours\" -m $index/${fastaName}.bwameth.c2t
+    touch -d \"\$(date -R -r $index/${fastaName}.bwameth.c2t) - 2 hours\" -m $index/${fastaName}.bwameth.c2t || true
     bwameth.py --threads $athreads --reference $index/$fastaName ${pairs[1]} ${pairs[0]} 2>> ${sample}.bwa_meth.runtime | samtools view -@ $othreads -bS - -o ${sample}.bam
     samtools flagstat -O tsv -@ $task.cpus ${sample}.bam > ${sample}.bwa_meth.log
 """
@@ -75,7 +75,7 @@ script:
         mkdir -p outs/\${sample}
     done
     # Touch the index files to update the timestamp for parabricks
-    touch -d \"\$(date -R -r $index/${fastaName}.bwameth.c2t) - 2 hours\" -m $index/${fastaName}.bwameth.c2t
+    touch -d \"\$(date -R -r $index/${fastaName}.bwameth.c2t) - 2 hours\" -m $index/${fastaName}.bwameth.c2t || true
     pbrun fq2bam_meth --ref $index/$fastaName --in-fq-list fastq_list.txt  --out-bam full_out.bam --bwa-nstreams 1 --bwa-cpu-thread-pool $task.cpus --align-only --num-gpus 1
     
     # split output bam into sample bams

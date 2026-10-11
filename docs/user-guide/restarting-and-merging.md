@@ -1,0 +1,70 @@
+# Restarting and merging
+
+Besides a full run from sequencing data, the workflow has entry points that reuse the results of earlier runs.
+
+| Goal | Entry point |
+|---|---|
+| Change matrix bins or add coverage formats without re-aligning | [Start after extraction](#start-after-extraction) |
+| Change the cell-calling threshold and regenerate reports | [Reporting only](#reporting-only) |
+| Process plates separately, then combine them | [Merging runs](#merging-runs) |
+| Combine the alignments of two sequencing runs of the same library | [Starting from BAM files](#starting-from-bam-files) |
+
+## Start after extraction
+
+`--startPostExtraction true` restarts after the deduplication and methylation extraction steps, before matrix generation. Use it to change the genome bins or to add outputs such as ALLC or Amethyst files without re-aligning.
+
+Requirements: the previous run must have completed `DEDUP_AND_EXTRACT:Extract` and `METRICS:GenerateMetrics`, and kept the per-well methylation calls (`parquetOut: true`, the default). Point `--previousOutDir` at the previous output folder and use a new `--outDir`.
+
+```bash
+nextflow run /PATH/TO/ScaleMethyl -profile docker -params-file runParams.yml \
+    --startPostExtraction true --previousOutDir ScaleMethyl.out \
+    --outDir ScaleMethyl.rerun --amethystOut true
+```
+
+## Reporting only
+
+`--reportingOnly true` runs only cell calling and report generation from the metrics of a previous run (`metrics_for_reporting/`). Use it after changing the `threshold` column in [samples.csv](samples-csv.md), or `minUniqTotal` / `maxUniqTotal`.
+
+```bash
+nextflow run /PATH/TO/ScaleMethyl -profile docker --genome genome.json \
+    --samples samples.csv --reportingOnly true \
+    --previousOutDir ScaleMethyl.out --outDir ScaleMethyl.reports
+```
+
+Use a new `--outDir`; reusing the original folder overwrites its results. The new run produces:
+
+- cell metrics (`<sample>.allCells.csv` and passing-cell statistics);
+- sample reports (`report/sample_reports/<sample>/<sample>.report.html`) with their csv files;
+- library reports (`library.<libName>.report.html`).
+
+These reports do not include the read and barcode statistics of the original run (those do not change); look them up in the original reports.
+
+## Merging runs
+
+For large experiments (e.g. a ScaleBio large kit) each plate can be analysed in a separate run, then combined:
+
+1. Run the workflow on each plate's fastq files without matrix generation: `--windowMatrixOut false --covOut false --amethystOut false --allcOut false`.
+2. Write a merge sample table with a `resultDir` column pointing to the output folder of each run. A sample that is present in several runs is listed once per run with the same name ([samples_merge.csv](../examples/samples_merge.csv)):
+
+    ```csv
+    sample,barcodes,libName,resultDir
+    PBMC-S1,1A01-1D12;2A01-2D12;3A01-3D12,ScaleMethyl,output
+    PBMC-S1,1E01-1H12;2E01-2H12;3E01-3H12,ScaleMethyl,output2
+    ```
+
+3. Run with `--startPostExtraction true --merged true` (or `--reportingOnly true --merged true` for combined reports only). Do not combine `merged` with `previousOutDir`.
+
+This combines the metrics and reports and generates the matrices for the merged samples. It assumes the runs contain different cells (different barcodes); runs whose cells can carry identical barcodes, such as sciMETv3 PCR libraries made with the same primers, should instead be kept separate and combined afterwards with unique cell names ([Combining libraries](../scimetv3/combining-libraries.md)).
+
+## Starting from BAM files
+
+The workflow can also start from the aligned BAM files of two previous runs, e.g. two sequencing runs of the same library. For each `<sample>.<tn5 well>` the two BAM files are merged with `samtools merge`, after setting the read group (`ID`, `LB`) of each input, and then processed from deduplication onwards.
+
+| Parameter | Description |
+|---|---|
+| `bam1Dir` | BAM folder of the first run, e.g. `outDir_run1/alignments/bam` |
+| `bam2Dir` | BAM folder of the second run |
+| `samples` | The sample table used for the original runs (same samples and barcodes) |
+| `bamMergeOut` | Publish the merged BAM files to `outDir/bamMerge/` (default `false`) |
+
+The previous runs must have published their BAM files (`bamOut: true`). The files are expected in the layout written by a previous run, one per sample and Tn5 well: `<bamDir>/<sample>.<tn5 well>/<sample>.<tn5 well>.bam`. Trimming and alignment statistics are not available in the reports of a run started from BAM files.

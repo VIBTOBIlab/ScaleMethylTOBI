@@ -3,12 +3,13 @@
 Create csv file with number of reads mapping to tss and background bedfiles along with percentage enriched
 """
 import pybedtools
+import os
 from collections import defaultdict
 from pathlib import Path
 import argparse
 import csv
 import sys
-
+pybedtools.helpers.set_tempdir(os.getcwd())
 
 def bam_intersect(id: str, bam_file: Path, tss_bed: Path, bg_bed: Path, cells: Path):
     passing_cells = []

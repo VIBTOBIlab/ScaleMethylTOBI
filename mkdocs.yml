@@ -1,0 +1,69 @@
+site_name: ScaleMethyl workflow
+site_description: Single-cell DNA methylation analysis for ScaleBio and sciMETv3 libraries
+docs_dir: docs
+# site_url: https://<user>.github.io/<repository>/   # set when publishing
+# repo_url: https://github.com/<user>/<repository>   # set when publishing
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Test run: getting-started/test-run.md
+  - User guide:
+      - Running the workflow: user-guide/running.md
+      - Input data: user-guide/input-data.md
+      - Sample table: user-guide/samples-csv.md
+      - Reference genomes: user-guide/reference-genomes.md
+      - Parameters: user-guide/parameters.md
+      - Restarting and merging: user-guide/restarting-and-merging.md
+  - Outputs:
+      - Output files: outputs/output-files.md
+      - QC reports: outputs/qc-reports.md
+      - Barcode metrics: outputs/barcode-metrics.md
+  - sciMETv3:
+      - scimetv3/index.md
+      - Library structure: scimetv3/library-structure.md
+      - Running sciMETv3: scimetv3/running.md
+      - Quality control: scimetv3/quality-control.md
+      - Combining libraries: scimetv3/combining-libraries.md
+  - Reference:
+      - Library structure file: reference/library-structure.md
+      - ScaleBio tools: reference/scalebio-tools.md
+      - Troubleshooting: reference/troubleshooting.md
+  - Changelog: changelog.md

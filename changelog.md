@@ -1,3 +1,8 @@
+# Local changes (based on 1.3.1)
+* sciMETv3 support: library structures, barcode lists and helper scripts in `references/sciMETv3/`
+* Alignment no longer fails when the time of the bwa-meth index `.c2t` file cannot be set (index owned by another user)
+* Documentation restructured and published as an MkDocs site (`mkdocs.yml`, `docs/`)
+
 # Version 1.3
 ## 1.3.1
 * Fix to using custom windows for CH contexts
@@ -25,16 +30,16 @@
 
 # Version 1.1.0
 * Added Amethyst compatible .h5 cell-methylation outputs
-* Changed [matrix format](docs/outputs.md#matrix-detailed-descriptions).
+* Changed matrix format (see Outputs > Output files).
 * Filter reads/fragments with artifically high CH methylation signal 
-* Updated QC metrics and sample QC (HTML) [report](docs/qcReport.md)
-* Updated [output directory structure](docs/outputs.md)
+* Updated QC metrics and sample QC (HTML) report (see Outputs > QC reports)
+* Updated output directory structure (see Outputs > Output files)
 * Updated per-cell methylation signal extraction to handle indel errors in reads as well as improve runtime performance
 * Combined all depenencies in a single conda environment / docker container
 * Use cutadapt directly for adapter trimming
 
 # Version 1.0.4
-* Added optional [single-cell output formats](docs/analysisParameters.md#optional-intermediate-file-outputs): ALLC and Bismark coverage files
+* Added optional single-cell output formats (see User guide > Parameters): ALLC and Bismark coverage files
 
 # Version 1.0.3
 * Upgraded datapane version and downgraded urllib version in containers
@@ -43,16 +48,16 @@
 * Updated the testing dataset including examples for runParams.yml, samples.csv and samplesheet.csv's
 * Option for TSS enrichment `--runTssEnrich`
 * Add option to pass a different bin size to CG and CH matrix generation
-    - See `tssWin` and `backgroundWin` [genomes.md ](docs/genomes.md)
+    - `tssWin` and `backgroundWin` in genome.json (see User guide > Reference genomes)
 
 # Version 1.0.1
 * Add TSS enrichment to sample QC reports
-    - See `genomeTiles` and `genomeTilesCH` [genomes.md ](docs/genomes.md)
+    - `genomeTiles` and `genomeTilesCH` in genome.json (see User guide > Reference genomes)
 * Add options for filtering passing cells by a percent uniquely mapped reads
     - See `--minUniqTotal` and `--maxUniqTotal`
 * Add options to turn off CG or CH matrix generation 
     - See `--matrixGenerationCG` and `--matrixGenerationCH`
-* Add library structure for splitting by i7 rather than i5 during bcl-convert. See [lib_split_on_i7.json](references/lib_split_on_i7.json)
+* Add library structure for splitting by i7 rather than i5 during bcl-convert. See `references/lib_split_on_i7.json`
 * Add multiqc for trimmed fastqs
 * README updates
 

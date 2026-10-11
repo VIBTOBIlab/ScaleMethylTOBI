@@ -2,14 +2,26 @@
 
 This is a Nextflow workflow to run analysis of ScaleBio Single Cell DNA methylation sequencing libraries. It processes data from sequencing reads to alignments, single-cell outputs (methylation coverage, binned genome matrix, etc.), and QC reports.
 
+This copy also supports **sciMETv3** libraries (Nichols et al. 2025, Cell Genomics); see [docs/scimetv3](docs/scimetv3/index.md) and `references/sciMETv3/`.
+
+## Documentation
+The full documentation is in [docs/](docs/index.md) and can be built as a website with [MkDocs](https://www.mkdocs.org):
+
+```
+pip install -r requirements-docs.txt
+mkdocs serve          # preview at http://127.0.0.1:8000
+mkdocs build          # static site in site/
+mkdocs gh-deploy      # publish to GitHub Pages
+```
+
 ## Getting started
 * First install [Nextflow](http://www.nextflow.io) (23.10 or later)
 * Download this workflow to your machine
-* Setup [dependencies](docs/dependencies.md)
+* Setup [dependencies](docs/getting-started/installation.md)
 * Launch the small pipeline [test run](#workflow-test)
-* Download / configure a reference [genome](docs/genomes.md) for your samples
-* Create a [Sample Barcode Table](docs/samplesCsv.md)
-* Create [runParams.yml](docs/analysisParameters.md), specifying inputs and analysis options for your run
+* Download / configure a reference [genome](docs/user-guide/reference-genomes.md) for your samples
+* Create a [Sample Barcode Table](docs/user-guide/samples-csv.md)
+* Create [runParams.yml](docs/user-guide/parameters.md), specifying inputs and analysis options for your run
 * Launch the workflow for your data
 
 ## Requirements
@@ -23,14 +35,14 @@ This is a Nextflow workflow to run analysis of ScaleBio Single Cell DNA methylat
 ## Inputs
 * Sequencing reads, either
     * `--runFolder`: Path to the Illumina Sequencer RunFolder (`bcl` files)
-    * `--fastqDir`: Path to the fastq files, generated outside (before) this workflow; see [Fastq generation](docs/fastqGeneration.md).
+    * `--fastqDir`: Path to the fastq files, generated outside (before) this workflow; see [Fastq generation](docs/user-guide/input-data.md).
 * Sample Barcode Table
-    * `--samples`: A .csv file listing all samples in the analysis; See [samples.csv](docs/samplesCsv.md).
+    * `--samples`: A .csv file listing all samples in the analysis; See [samples.csv](docs/user-guide/samples-csv.md).
 * Reference Genome
-    * `--genome`: A reference genome, including a [BSBolt](https://github.com/NuttyLogic/BSBolt) index for alignment, and gene annotation; See [Reference Genomes](docs/genomes.md)
+    * `--genome`: A reference genome, including a [BSBolt](https://github.com/NuttyLogic/BSBolt) index for alignment, and gene annotation; See [Reference Genomes](docs/user-guide/reference-genomes.md)
 
 ## Outputs
-The workflow produces per-sample and per-library QC reports (`html`), alignments (`bam`), per-cell methylation coverage calls (bismark-like `cov`), genomic-bin methylation score matrix files (`mtx`) and more; See [Outputs](docs/outputs.md) for a full list.
+The workflow produces per-sample and per-library QC reports (`html`), alignments (`bam`), per-cell methylation coverage calls (bismark-like `cov`), genomic-bin methylation score matrix files (`mtx`) and more; See [Outputs](docs/outputs/output-files.md) for a full list.
 
 ## Workflow Execution
 ### Workflow test
@@ -56,7 +68,7 @@ See the [Nextflow command-line documentation](https://www.nextflow.io/docs/lates
 
 ## Configuration
 ### Specifying Analysis Parameters
-Analysis parameters (inputs, options, etc.) can be defined either in a [runParams.yml](docs/examples/runParams.yml) file or directly on the nextflow command-line. See [analysisParameters](docs/analysisParameters.md) for details on the options.
+Analysis parameters (inputs, options, etc.) can be defined either in a [runParams.yml](docs/examples/runParams.yml) file or directly on the nextflow command-line. See [analysisParameters](docs/user-guide/parameters.md) for details on the options.
 
 **Note** that `nextflow` options are given with a single `-` (e.g. `-profile`), while workflow parameters (e.g. `--outDir`) are given with a double dash `--`.
 
@@ -69,7 +81,7 @@ See [Nextflow configuration](https://www.nextflow.io/docs/latest/config.html) fo
 
 
 ## Dependency Management
-The Nextflow workflow can automatically use pre-built docker containers with all dependencies included. Activating the included `-profile docker` enables the required Nextflow settings. For details and alternatives see [Dependencies](docs/dependencies.md).
+The Nextflow workflow can automatically use pre-built docker containers with all dependencies included. Activating the included `-profile docker` enables the required Nextflow settings. For details and alternatives see [Dependencies](docs/getting-started/installation.md).
 
 ## Running in the cloud
 Nextflow itself supports running using [AWS](https://www.nextflow.io/docs/latest/aws.html), [Azure](https://www.nextflow.io/docs/latest/azure.html) and [Google Cloud](https://www.nextflow.io/docs/latest/google.html). 
@@ -80,7 +92,7 @@ In addition [Nextflow tower](https://tower.nf) offers another simple way to mana
 Alternate start points allow users to start the analysis without starting from the beginning. These options are included below. For these start points to be available, the pipeline needs to be completed to certain points in previous runs. 
 
 ### Matrix Generation
-Command line argument `--startPostAlignment true` or `startPostAlignment: true` in the runParams yaml file will rerun the pipeline directly after the 'Dedup and Extract' module and before 'Matrix Generation'. This will enable the user to include additional outputs to their run or change the binning for downstream cell clustering without needing to re-align. Additional output options can be included such as allc and amethyst outputs. The 'DEDUP_AND_EXTRACT:Extract' and 'METRICS_AND_REPORTING:GenerateMetrics' processes need to completely finish before this option is available for subsequent runs.
+Command line argument `--startPostExtraction true` or `startPostExtraction: true` in the runParams yaml file will rerun the pipeline directly after the 'Dedup and Extract' module and before 'Matrix Generation'. This will enable the user to include additional outputs to their run or change the binning for downstream cell clustering without needing to re-align. Additional output options can be included such as allc and amethyst outputs. The 'DEDUP_AND_EXTRACT:Extract' and 'METRICS_AND_REPORTING:GenerateMetrics' processes need to completely finish before this option is available for subsequent runs.
 
 
 # Versions and Updates
