@@ -1,8 +1,8 @@
 site_name: ScaleMethyl workflow
 site_description: Single-cell DNA methylation analysis for ScaleBio and sciMETv3 libraries
 docs_dir: docs
-site_url: https://VIBTOBIlab.github.io/ScaleMethylTOBI/   # set when publishing
-repo_url: https://github.com/VIBTOBIlab/ScaleMethylTOBI   # set when publishing
+site_url: https://vibtobilab.github.io/ScaleMethylTOBI
+repo_url: https://github.com/VIBTOBIlab/ScaleMethylTOBI
 
 theme:
   name: material
