@@ -1,4 +1,4 @@
-# TOBI lab changes (based on 1.4.0)
+# Version 1.4.0 (TOBI lab changes)
 * sciMETv3 support: library structures, barcode lists and helper scripts in `references/sciMETv3/`
 * Alignment no longer fails when the time of the bwa-meth index `.c2t` file cannot be set (index owned by another user)
 * Documentation restructured and published as an MkDocs site (`mkdocs.yml`, `docs/`)
