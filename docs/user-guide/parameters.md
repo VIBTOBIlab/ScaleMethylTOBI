@@ -6,10 +6,7 @@ Parameters are set in the `runParams.yml` file or on the command line (`--name v
 
 | Parameter       | Default           | Description                                                                                                                                |
 | --------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `run_folder`    |                   | Illumina run folder; see [Input data](input-data.md)                                                                                       |
-| `fastq_dir`     |                   | Folder with fastq files; see [Input data](input-data.md)                                                                                   |
-| `input`         |                   | Sample table (samples.csv), required; see [Sample table](samples-csv.md)                                                                   |
-| `genome`        |                   | `genome.json` of the reference, required; see [Reference genomes](reference-genomes.md)                                                    |
+| `input`         |                   | Samplesheet with the samples and the fastq files of their libraries, required; see [Samplesheet](samples-csv.md)                           |
 | `lib_structure` | `lib.json`        | Library structure definition, as an absolute path or relative to `references/`; see [Library structure](../reference/library-structure.md) |
 | `outdir`        | `ScaleMethyl.out` | Output folder                                                                                                                              |
 
@@ -23,11 +20,21 @@ Library structures included in `references/`:
 | `sciMETv3/lib.json`      | sciMETv3 with the paper's i5 primers         |
 | `sciMETv3/lib_D50x.json` | sciMETv3 with TruSeq HT D501-D508 i5 primers |
 
+## Reference genome
+
+Give either `genome` or `genome_json`; see [Reference genomes](reference-genomes.md).
+
+| Parameter       | Default                                      | Description                                                                                  |
+| --------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `genome`        |                                              | Pre-built genome by name: `hg38` or `mm39` (`conf/genomes.config`); downloaded and unpacked  |
+| `genome_json`   |                                              | Your own `genome.json` with the bwa-meth index and annotation files                          |
+| `genomes_base`  | ScaleBio AWS S3 bucket                       | Location of the pre-built genome archives (URL or folder), e.g. a local mirror               |
+
 ## Optional outputs
 
 | Parameter           | Default | Description                                                                                                                  |
 | ------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `fastq_out`         | `false` | Publish the bcl-convert fastq files and the demultiplexed sample fastq files                                                 |
+| `fastq_out`         | `false` | Publish the demultiplexed sample fastq files                                                                                 |
 | `trim_out`          | `false` | Publish the trimmed fastq files (`fastq/trim/`)                                                                              |
 | `bam_out`           | `false` | Publish the aligned BAM files                                                                                                |
 | `bam_dedup_out`     | `false` | Publish the deduplicated BAM files                                                                                           |
@@ -81,12 +88,12 @@ To try a different threshold without rerunning everything, use the [reporting-on
 
 Adapter trimming always runs with fixed `cutadapt` settings: the reverse complement of the Tn5 adapter (`CTATCTCTTATA`) is trimmed from the 3' end of Read 1, the TruSeq adapter (`AGATCGGAAGAGC`) from the 3' end of Read 2, plus the last 10 bases of Read 2; reads shorter than 20 bp are dropped. The first 10 bases of Read 1 and the barcode and adapter at the start of Read 2 are removed during demultiplexing, as defined in the library structure.
 
-## Fastq generation
+## MultiQC
 
-| Parameter            | Default                    | Description                                                 |
-| -------------------- | -------------------------- | ----------------------------------------------------------- |
-| `fastq_samplesheet`  |                            | Custom bcl-convert samplesheet, replacing the generated one |
-| `bcl_convert_params` | `--no-lane-splitting true` | Extra bcl-convert options                                   |
+| Parameter       | Default | Description                                                                                   |
+| --------------- | ------- | --------------------------------------------------------------------------------------------- |
+| `skip_multiqc`  | `false` | Do not make the MultiQC report (FastQC, cutadapt and samtools flagstat, in `outdir/multiqc/`) |
+| `multiqc_title` |         | Title of the MultiQC report                                                                   |
 
 ## Restarting and merging
 

@@ -58,7 +58,7 @@ workflow PIPELINE_INITIALISATION {
         before_text = before_text.replaceAll(/\033\[[0-9;]*m/, '')
     }
 
-    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samples.csv --genome genome.json --fastq_dir <FASTQ_DIR> --outdir <OUTDIR>"
+    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samples.csv --genome <hg38/mm39> --outdir <OUTDIR>"
 
     UTILS_NFSCHEMA_PLUGIN (
         workflow,
@@ -146,15 +146,24 @@ def validateInputParameters(input) {
     if (!input) {
         error("Must specify --input (samples.csv)")
     }
-    if (!params.genome) {
-        error("Must specify --genome (genome.json)")
+    if (params.genome && params.genome_json) {
+        error("Give either --genome (a pre-built genome) or --genome_json, not both")
     }
-    if (params.fastq_dir && params.run_folder) {
-        error("One input type must be specified at a time: --run_folder or --fastq_dir")
+    if (!params.genome && !params.genome_json) {
+        error("Must specify the reference genome: --genome (${params.genomes.keySet().join(', ')}) or --genome_json")
+    }
+    if (params.genome && !params.genomes.containsKey(params.genome)) {
+        error("Unknown genome '${params.genome}'. Pre-built genomes: ${params.genomes.keySet().join(', ')}; use --genome_json for other genomes")
     }
     def startsFromReads = !(params.reporting_only || params.start_post_extraction || (params.bam1_dir && params.bam2_dir))
-    if (startsFromReads && !params.fastq_dir && !params.run_folder) {
-        error("Must specify either --run_folder or --fastq_dir")
+    if (startsFromReads) {
+        // Every library needs at least one fastq set (fastq_1, fastq_2, index_1 columns)
+        def rows = file(input, checkIfExists: true).splitCsv(header: true, strip: true)
+        def librariesWithFastqs = rows.findAll { row -> row.fastq_1 }.collect { row -> row.libName }.toSet()
+        def missing = rows.collect { row -> row.libName }.toSet() - librariesWithFastqs
+        if (missing) {
+            error("No fastq files (fastq_1, fastq_2, index_1, index_2 columns) in ${input} for library: ${missing.join(', ')}")
+        }
     }
     if ((params.reporting_only || params.start_post_extraction) && !(params.previous_outdir || params.merged)) {
         error("Must specify --previous_outdir or --merged when --reporting_only or --start_post_extraction is enabled")
@@ -168,6 +177,49 @@ def validateInputParameters(input) {
     if ((params.bam1_dir && !params.bam2_dir) || (!params.bam1_dir && params.bam2_dir)) {
         error("--bam1_dir and --bam2_dir must be specified together")
     }
+}
+
+//
+// Fastq sets of the samplesheet: one per library and sequencing run (unique combination of
+// libName and fastq files). Relative paths are resolved relative to the samplesheet.
+// Returns [ meta, fastq_1, fastq_2, index_1, index_2 or [] ] with
+// meta = [ id: <libName>.<n>, lib: <libName>, fastq_num: <n>, fastqc_ids: [ unique FastQC name of each file ] ]
+//
+def samplesheetFastqSets(samplesheet) {
+    def columns = ['fastq_1', 'fastq_2', 'index_1', 'index_2']
+    def sets = []
+    samplesheet.splitCsv(header: true, strip: true).each { row ->
+        if (row.fastq_1) {
+            def files = columns.collect { col -> row[col] ? samplesheetPath(row[col], samplesheet) : null }
+            def key = [row.libName] + files.collect { f -> f?.toUriString() }
+            if (!sets.any { set -> set.key == key }) {
+                sets << [key: key, lib: row.libName, files: files]
+            }
+        }
+    }
+    // FastQC reports are named after the fastq files: make the names unique across fastq sets
+    def names = sets.collectMany { set -> set.files.findAll { f -> f }.collect { f -> f.name } }
+    def duplicated = names.findAll { name -> names.count(name) > 1 }.toSet()
+    return sets.withIndex().collect { set, idx ->
+        def id = "${set.lib}.${idx}".toString()
+        def fastqcIds = set.files.collect { f -> f ? (f.name in duplicated ? "${id}_${f.name}".toString() : f.name) : null }
+        def meta = [id: id, lib: set.lib, fastq_num: idx, fastqc_ids: fastqcIds]
+        [meta, set.files[0], set.files[1], set.files[2], set.files[3] ?: []]
+    }
+}
+
+//
+// Path of a file listed in the samplesheet: URLs and absolute paths as given,
+// relative paths relative to the directory of the samplesheet
+//
+def samplesheetPath(path, samplesheet) {
+    def resolved = (path =~ /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//) || path.startsWith('/')
+        ? file(path)
+        : samplesheet.getParent().resolve(path)
+    if (!resolved.exists()) {
+        error("File in the samplesheet ${samplesheet} not found: ${path}")
+    }
+    return resolved
 }
 
 //
@@ -201,8 +253,10 @@ def writeWorkflowInfo(outdir) {
         ]
     ]
     def paramsData = ["Parameters": params.collectEntries { k, v -> [k.toString(), v.toString()] }]
-    def genomeJson = params.genome ? file(params.genome) : null
-    def referenceData = ["Reference Genome": (genomeJson && genomeJson.exists()) ? new groovy.json.JsonSlurper().parse(genomeJson) : [:]]
+    def genomeJson = params.genome_json ? file(params.genome_json) : null
+    def referenceData = ["Reference Genome": (genomeJson && genomeJson.exists())
+        ? new groovy.json.JsonSlurper().parse(genomeJson)
+        : (params.genome ? ["name": params.genome, "archive": params.genomes[params.genome]?.archive] : [:])]
     def manifestData = ["Manifest": ["name": workflow.manifest.name, "version": workflow.manifest.version]]
     def jsonStr = groovy.json.JsonOutput.toJson(data + paramsData + referenceData + manifestData)
     file("${outdir}/workflow_info.json").text = groovy.json.JsonOutput.prettyPrint(jsonStr)

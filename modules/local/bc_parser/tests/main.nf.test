@@ -28,10 +28,11 @@ nextflow_process {
                 input[1] = file("${projectDir}/references")
                 input[2] = "lib.json"
                 input[3] = channel.of([
-                    "ScaleMethyl",
-                    "ScaleMethyl_S1_L001_001.fastq.gz",
-                    files("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_*_001.fastq.gz").sort(),
-                    0
+                    [id: "ScaleMethyl.0", lib: "ScaleMethyl", fastq_num: 0],
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_R1_001.fastq.gz"),
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_R2_001.fastq.gz"),
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_I1_001.fastq.gz"),
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_I2_001.fastq.gz")
                 ])
                 """
             }

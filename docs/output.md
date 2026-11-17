@@ -12,7 +12,8 @@ The outputs are described in detail in [output files](outputs/output-files.md), 
 | `metrics_for_reporting/`        | Per-sample metrics used to build the reports (and to restart with `--reporting_only`)          |
 | `matrix_generation/`            | Methylation calls per sample and Tn5 well (parquet), needed for `--start_post_extraction`      |
 | `barcodes/`                     | Barcode demultiplexing metrics (bc_parser)                                                     |
-| `fastq/`                        | FastQC reports, trimming statistics and (optionally) fastq files                               |
+| `fastq/`                        | FastQC reports, trimming statistics and (optionally) trimmed fastq files                       |
+| `multiqc/`                      | MultiQC report of the read QC, trimming and alignment statistics                               |
 | `alignments/`                   | Deduplication statistics, cell info and (optionally) BAM files                                 |
 | `workflow_info.json`            | Command, parameters, reference genome and version of the run                                   |
 | `pipeline_info/`                | Nextflow execution report, timeline, trace and DAG, parameters, and software versions          |

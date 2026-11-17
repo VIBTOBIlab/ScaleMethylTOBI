@@ -26,7 +26,7 @@ If you are not sure which primers were used, look at the most frequent Index 2 s
 
 D501-D508 are 8 bp indexes. With a 10-cycle Index 2 read, the last two cycles read into the adapter after the index, so every I2 read ends in `AC` (e.g. `TATAGCCTAC` for D501). `lib_D50x.json` uses only the first 8 bases: the `AC` carries no information, and sequencing errors in it would otherwise cost reads. The barcodes are named D01-D08 for D501-D508.
 
-`lib_D50x.json` is meant for fastq input (`--fastq_dir`). Starting from a run folder with a 10-cycle Index 2 read would need `OverrideCycles` with `I8N2` for Index 2, which the generated bcl-convert samplesheet does not do.
+`lib_D50x.json` is meant for fastq files written without index demultiplexing (e.g. a whole lane). Demultiplexing a 10-cycle Index 2 read with bcl-convert would need `OverrideCycles` with `I8N2` for Index 2, which `bin/bcl_convert_sheet.py` does not write.
 
 With only 8 i5 barcodes, separate PCR libraries (e.g. PCR strips) often use the same D501-D508 set. These must be run as [separate libraries](running.md#several-libraries-with-the-same-barcodes).
 

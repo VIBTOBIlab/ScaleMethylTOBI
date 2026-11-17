@@ -8,13 +8,13 @@ include { COMBINED_SAMPLE_REPORT } from '../../../modules/local/combined_sample_
 workflow REPORTING {
 
     take:
-    ch_report_input        // channel: [ sample, allCells, fragment_hist, dedup_stats, mapping_stats, trimming_stats, tss_enrich, libName, barcodes ]
-    ch_passing_cell_stats  // channel: [ sample, passingCellSummaryStats.csv ]
-    ch_csv_folder          // channel: [ sample, csv/ ] csv files for the sample plate plots
-    ch_combined_csv        // channel: [ libName, csv/ ] csv files for the library plate plots
-    ch_library_stats       // channel: [ libName, [ allCells ], [ passing stats ], metrics.json ]
-    ch_cg_mtx              // channel: [ sample, CG.score.mtx.gz ] (only used with_matrix)
-    ch_cg_mtx_barcodes     // channel: [ sample, barcodes.tsv ] (only used with_matrix)
+    ch_report_input        // channel: [ meta, allCells, fragment_hist, dedup_stats, mapping_stats, trimming_stats, tss_enrich, libName, barcodes ]
+    ch_passing_cell_stats  // channel: [ meta, passingCellSummaryStats.csv ]
+    ch_csv_folder          // channel: [ meta, csv/ ] csv files for the sample plate plots
+    ch_combined_csv        // channel: [ [ id: libName ], csv/ ] csv files for the library plate plots
+    ch_library_stats       // channel: [ [ id: libName ], [ allCells ], [ passing stats ], metrics.json ]
+    ch_cg_mtx              // channel: [ meta, CG.score.mtx.gz ] (only used with_matrix)
+    ch_cg_mtx_barcodes     // channel: [ meta, barcodes.tsv ] (only used with_matrix)
     lib_json               // path: library structure definition (.json)
     trimming_and_mapping   // boolean: trimming and mapping statistics are available
     reporting_only         // boolean: only the reports are regenerated (--reporting_only)
@@ -45,6 +45,6 @@ workflow REPORTING {
     )
 
     emit:
-    sample_report  = GENERATE_SAMPLE_REPORT.out.report // channel: [ sample, report.html ]
-    library_report = COMBINED_SAMPLE_REPORT.out.report // channel: [ libName, report.html ]
+    sample_report  = GENERATE_SAMPLE_REPORT.out.report // channel: [ meta, report.html ]
+    library_report = COMBINED_SAMPLE_REPORT.out.report // channel: [ [ id: libName ], report.html ]
 }

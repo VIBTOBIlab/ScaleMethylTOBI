@@ -24,13 +24,12 @@ See the [Nextflow documentation](https://www.nextflow.io/docs/latest/index.html)
 All analysis parameters can be set in a `runParams.yml` file. A minimal example:
 
 ```yaml
-fastq_dir: /path/to/fastqs # or run_folder: /path/to/illumina/run
-input: /path/to/samples.csv
-genome: /path/to/genome.json
+input: /path/to/samples.csv # samples, Tn5 barcodes and fastq files
+genome: hg38 # or genome_json: /path/to/genome.json
 outdir: ScaleMethyl.out
 ```
 
-See [Input data](input-data.md), [Sample table](samples-csv.md), [Reference genomes](reference-genomes.md) and [Parameters](parameters.md) for all options. The test-run example is [runParams.yml](../examples/runParams.yml).
+See [Input data](input-data.md), [Samplesheet](samples-csv.md), [Reference genomes](reference-genomes.md) and [Parameters](parameters.md) for all options. The test-run example is [runParams.yml](../examples/runParams.yml).
 
 ## System configuration
 

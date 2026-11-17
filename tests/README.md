@@ -2,7 +2,7 @@
 
 The tests use [nf-test](https://www.nf-test.com/) and a tiny synthetic dataset in `tests/data/`:
 
-- `tests/default.nf.test`: the whole pipeline with `-profile test`; the snapshot holds every output path and the content of the reproducible outputs
+- `tests/default.nf.test`: the whole pipeline with `-profile test`; the snapshot holds every output path and the content of the reproducible outputs. A second test selects the genome by name (`--genome hg38`, with `--genomes_base` pointing to `data/genomes/`, the synthetic test genome packed like the ScaleBio genome archives) and checks that the same cells are found.
 - `modules/local/<module>/tests/main.nf.test`: tests of single modules
 
 nf-test, Nextflow and nf-core/tools are pinned in `dev-environment.yml` (`conda env create -f dev-environment.yml`).
@@ -37,16 +37,17 @@ and commit the changed `.snap` files together with the code change.
 
 The pipeline snapshot (`tests/default.nf.test.snap`) has two entries:
 
-- `-profile test`: the path of every published file (except `pipeline_info/`), the md5 of the sorted lines of the text and gzipped outputs (cells are written in a different order on each run), the header line of the `.mtx.gz` matrices and, for `report_clusters.tsv`, only the cell IDs (the cluster labels of the random synthetic cells change between runs). HTML, PNG, parquet, h5, tbi and `workflow_info.json` are only checked by name.
+- `-profile test`: the path of every published file (except `pipeline_info/`), the md5 of the sorted lines of the text and gzipped outputs (cells are written in a different order on each run), the header line of the `.mtx.gz` matrices and, for `report_clusters.tsv`, only the cell IDs (the cluster labels of the random synthetic cells change between runs). HTML, PNG, parquet, h5, tbi, `workflow_info.json` and the MultiQC files are only checked by name.
 - `software_versions`: `pipeline_info/scalemethyltobi_software_versions.yml` without the Nextflow version. It changes with the pipeline version and the container.
 
 ## Test data
 
-| Path               | Content                                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `data/samples.csv` | Two samples, Tn5 wells 1A01-1A03 and 1A07-1A09                                                                                 |
-| `data/fastq/`      | 3,690 read pairs in the ScaleBio v1.1 layout (`references/lib.json`): 12 cells with 300 reads each plus 30 background barcodes |
-| `data/genome/`     | Random 72 kb genome (chr1, chr2, chrM), bwa-meth index, TSS and background windows                                             |
+| Path                          | Content                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `data/samples.csv`            | Samplesheet: two samples, Tn5 wells 1A01-1A03 and 1A07-1A09, with the fastq files (paths relative to the samplesheet)          |
+| `data/fastq/`                 | 3,690 read pairs in the ScaleBio v1.1 layout (`references/lib.json`): 12 cells with 300 reads each plus 30 background barcodes |
+| `data/genome/`                | Random 72 kb genome (chr1, chr2, chrM), bwa-meth index, TSS and background windows                                             |
+| `data/genomes/grch38-bwa.tgz` | `data/genome/` packed like the ScaleBio genome archives, for the `--genome` test                                               |
 
 The reads are bisulfite converted (CpG methylated with probability 0.8, CH unmethylated), so CpG methylation should come out near 80% and CH methylation near 0%.
 
@@ -59,4 +60,5 @@ cp tests/data/genome/genome.fa tests/data/genome/bwa_meth/
 docker run --rm -v "$PWD/tests/data/genome/bwa_meth":/idx -w /idx \
     public.ecr.aws/o5l3p3e4/scale-methyl-tools:2025-06-16-213106 \
     bwameth.py index-mem2 genome.fa
+COPYFILE_DISABLE=1 tar -czf tests/data/genomes/grch38-bwa.tgz -C tests/data genome
 ```

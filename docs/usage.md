@@ -7,23 +7,27 @@ This page summarises how to run the pipeline. The full user guide is in the [doc
 
 ## Samplesheet input
 
-Create a `samples.csv` with one row per sample and pass it with `--input`:
+Create a samplesheet with one row per sample and the fastq files of its library, and pass it with `--input`:
 
 ```csv title="samples.csv"
-sample,barcodes,libName
-PBMC-S1,1A01-2D12,ScaleMethyl
-PBMC-S2,2E01-3H12,ScaleMethyl
+sample,barcodes,libName,fastq_1,fastq_2,index_1,index_2
+PBMC-S1,1A01-2D12,ScaleMethyl,fastq/Lib_R1_001.fastq.gz,fastq/Lib_R2_001.fastq.gz,fastq/Lib_I1_001.fastq.gz,fastq/Lib_I2_001.fastq.gz
+PBMC-S2,2E01-3H12,ScaleMethyl,fastq/Lib_R1_001.fastq.gz,fastq/Lib_R2_001.fastq.gz,fastq/Lib_I1_001.fastq.gz,fastq/Lib_I2_001.fastq.gz
 ```
 
 | Column      | Description                                                                               |
 | ----------- | ----------------------------------------------------------------------------------------- |
 | `sample`    | Sample name; letters, digits and dashes only. Required.                                   |
+| `libName`   | Library name; letters, digits and dashes only. Required.                                  |
 | `barcodes`  | Tn5 (sample) barcode wells of the sample, as ranges separated by `;`. Default: all wells. |
-| `libName`   | Library name: the prefix of the fastq file names. Default: `ScaleMethyl`.                 |
+| `fastq_1`   | Read 1 fastq file of the library                                                          |
+| `fastq_2`   | Read 2 fastq file of the library                                                          |
+| `index_1`   | Index 1 (i7) fastq file of the library                                                    |
+| `index_2`   | Index 2 (i5) fastq file of the library                                                    |
 | `threshold` | Optional fixed unique-read threshold for cell calling.                                    |
 | `resultDir` | Output directory of a previous run, only used with `--merged`.                            |
 
-The file is validated with [assets/schema_input.json](../assets/schema_input.json). See the [sample table](user-guide/samples-csv.md) page for details.
+The fastq files belong to the library, which holds all its samples: give them in at least one row per library. Add rows (repeating a sample) for more sequencing runs of a library; the runs are combined per sample and Tn5 well. Relative paths are relative to the samplesheet. The file is validated with [assets/schema_input.json](../assets/schema_input.json). See the [samplesheet](user-guide/samples-csv.md) page for details.
 
 ## Running the pipeline
 
@@ -31,19 +35,17 @@ The file is validated with [assets/schema_input.json](../assets/schema_input.jso
 nextflow run VIBTOBIlab/scalemethyltobi \
     -profile docker \
     --input samples.csv \
-    --genome /path/to/genome.json \
-    --fastq_dir /path/to/fastqs \
+    --genome hg38 \
     --outdir ScaleMethyl.out
 ```
 
-Use `--run_folder` instead of `--fastq_dir` to start from an Illumina run folder (BCL files). The reference genome is described by a [genome.json](user-guide/reference-genomes.md) file with a bwa-meth index.
+The reference genome is a pre-built genome selected by name (`--genome hg38` or `--genome mm39`, downloaded by the workflow) or your own `genome.json` (`--genome_json`), see [Reference genomes](user-guide/reference-genomes.md). Fastq files must be generated before the run (bcl-convert with index reads, see [Input data](user-guide/input-data.md)).
 
 Parameters can also be given in a YAML or JSON file with `-params-file`:
 
 ```yaml title="params.yaml"
 input: "samples.csv"
-genome: "/path/to/genome.json"
-fastq_dir: "/path/to/fastqs"
+genome: "hg38"
 outdir: "ScaleMethyl.out"
 ```
 

@@ -13,24 +13,22 @@ workflow BAM_MERGE_RUNS {
     main:
     // The directory structure is expected to match the alignments/bam output of this workflow:
     // <dir>/<sample>.<well>/<sample>.<well>.bam
-    // [ sample, well, [ bam ] ]
+    // [ meta, bam ]
     def ch_bam1 = channel.fromPath("${bam1_dir}/*/*bam", checkIfExists: true)
-        .map { bam -> bamSampleWell(bam) }
-        .groupTuple(by: [0, 1])
+        .map { bam -> [bamMeta(bam), bam] }
     def ch_bam2 = channel.fromPath("${bam2_dir}/*/*bam", checkIfExists: true)
-        .map { bam -> bamSampleWell(bam) }
-        .groupTuple(by: [0, 1])
+        .map { bam -> [bamMeta(bam), bam] }
 
-    MERGE_BAM(ch_bam1.join(ch_bam2, by: [0, 1], failOnDuplicate: true))
+    MERGE_BAM(ch_bam1.join(ch_bam2, failOnDuplicate: true))
 
     emit:
-    bam = MERGE_BAM.out.bam // channel: [ sample.well, bam ]
+    bam = MERGE_BAM.out.bam // channel: [ meta, bam ]
 }
 
 //
-// [ sample, well, bam ] from <sample>.<well>.bam
+// Meta map of <sample>.<well>.bam: [ id: sample.well, sample, well ]
 //
-def bamSampleWell(bam) {
+def bamMeta(bam) {
     def ns = bam.getBaseName().tokenize('.')
-    return [ns[0], ns[1], bam]
+    return [id: "${ns[0]}.${ns[1]}".toString(), sample: ns[0], well: ns[1]]
 }

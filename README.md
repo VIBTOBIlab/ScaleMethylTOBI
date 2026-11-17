@@ -18,15 +18,15 @@ This repository is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1
 
 ![VIBTOBIlab/scalemethyltobi metro map](docs/images/metro_map.svg)
 
-1. Fastq generation from a sequencer run folder ([`bcl-convert`](https://support.illumina.com/sequencing/sequencing_software/bcl-convert.html), optional)
-2. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-3. Barcode demultiplexing by sample and Tn5 well with error correction (`bc_parser`)
-4. Adapter trimming ([`cutadapt`](https://cutadapt.readthedocs.io))
-5. Alignment ([`bwa-meth`](https://github.com/brentp/bwa-meth) with bwa-mem2)
-6. Deduplication per cell barcode (`sc_dedup`)
-7. Methylation extraction: per-cell CG and CH methylation calls
-8. Cell calling, TSS enrichment and HTML QC reports per sample and per library
-9. Per-cell coverage files (Bismark `.cov`, ALLC, Amethyst `.h5`) and genome-bin methylation matrices
+1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+2. Barcode demultiplexing by sample and Tn5 well with error correction (`bc_parser`), per library and sequencing run
+3. Adapter trimming ([`cutadapt`](https://cutadapt.readthedocs.io)), combining the sequencing runs of each sample
+4. Alignment ([`bwa-meth`](https://github.com/brentp/bwa-meth) with bwa-mem2), with a pre-built genome (`hg38`, `mm39`) or your own
+5. Deduplication per cell barcode (`sc_dedup`)
+6. Methylation extraction: per-cell CG and CH methylation calls
+7. Cell calling, TSS enrichment and HTML QC reports per sample and per library
+8. Per-cell coverage files (Bismark `.cov`, ALLC, Amethyst `.h5`) and genome-bin methylation matrices
+9. Read QC, trimming and alignment summary ([`MultiQC`](https://multiqc.info))
 
 ## Supported libraries
 
@@ -46,17 +46,17 @@ This repository is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1
 > nextflow run VIBTOBIlab/scalemethyltobi -profile test,docker --outdir test_results
 > ```
 
-First, prepare a sample table with the samples of your libraries:
+First, prepare a samplesheet with the samples of your libraries and the fastq files of the libraries:
 
 `samples.csv`:
 
 ```csv
-sample,barcodes,libName
-PBMC-S1,1A01-2D12,ScaleMethyl
-PBMC-S2,2E01-3H12,ScaleMethyl
+sample,barcodes,libName,fastq_1,fastq_2,index_1,index_2
+PBMC-S1,1A01-2D12,ScaleMethyl,fastq/Lib_R1_001.fastq.gz,fastq/Lib_R2_001.fastq.gz,fastq/Lib_I1_001.fastq.gz,fastq/Lib_I2_001.fastq.gz
+PBMC-S2,2E01-3H12,ScaleMethyl,fastq/Lib_R1_001.fastq.gz,fastq/Lib_R2_001.fastq.gz,fastq/Lib_I1_001.fastq.gz,fastq/Lib_I2_001.fastq.gz
 ```
 
-Each row is a sample: its name, its Tn5 barcode wells and the library (fastq file prefix) it was sequenced in. See the [sample table](docs/user-guide/samples-csv.md) documentation.
+Each row is a sample: its name, its Tn5 barcode wells, its library and the fastq files (R1, R2, I1, I2) of the library. Add rows for more sequencing runs of a library; they are combined per sample. See the [samplesheet](docs/user-guide/samples-csv.md) documentation.
 
 Now, you can run the pipeline using:
 
@@ -64,18 +64,17 @@ Now, you can run the pipeline using:
 nextflow run VIBTOBIlab/scalemethyltobi \
    -profile <docker/singularity/.../institute> \
    --input samples.csv \
-   --genome /path/to/genome.json \
-   --fastq_dir /path/to/fastqs \
+   --genome hg38 \
    --outdir <OUTDIR>
 ```
 
-Use `--run_folder` instead of `--fastq_dir` to start from an Illumina run folder. `genome.json` describes the bwa-meth index and the genome annotation; see [reference genomes](docs/user-guide/reference-genomes.md).
+`--genome` selects a pre-built genome (`hg38` or `mm39`) that the pipeline downloads and unpacks; for other genomes give your own `genome.json` with `--genome_json`. See [reference genomes](docs/user-guide/reference-genomes.md). The fastq files are generated before the run, with the index reads (see [input data](docs/user-guide/input-data.md)).
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
 > [!IMPORTANT]
-> Since version 1.4.0 the parameters use snake_case, as in nf-core pipelines (e.g. `--samples` is now `--input`, `--outDir` is `--outdir`, `--fastqDir` is `--fastq_dir`). bwa-meth is the only aligner. See the [changelog](CHANGELOG.md).
+> Since version 1.4.0 the parameters use snake_case, as in nf-core pipelines (e.g. `--samples` is now `--input`, `--outDir` is `--outdir`). The fastq files are listed in the samplesheet (`--fastqDir` and `--runFolder` were removed), and bwa-meth is the only aligner. See the [changelog](CHANGELOG.md).
 
 ## Documentation
 

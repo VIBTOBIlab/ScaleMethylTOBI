@@ -10,27 +10,38 @@
   - Software versions in `pipeline_info/scalemethyltobi_software_versions.yml`, together with the Nextflow execution reports
   - Requires Nextflow >= 25.10.4; the code follows the Nextflow strict syntax (`nextflow lint`)
   - GitHub Actions for nf-test, nf-core lint and pre-commit; `.pre-commit-config.yaml`; development tools in `dev-environment.yml`
+- Input from one samplesheet (`--input`): the fastq files of each library are given in the `fastq_1`, `fastq_2`, `index_1` and `index_2` columns (absolute, relative to the samplesheet, or URLs), so file names no longer matter
+  - Several sequencing runs (or lanes, or chunks) of a library are given as additional rows; each set of fastq files is demultiplexed by its own `bc_parser` job and the runs are combined per sample and Tn5 well before trimming
+  - `--fastq_dir` and `--run_folder` (with the bcl-convert step, `--fastq_samplesheet` and `--bcl_convert_params`) were removed; `bin/bcl_convert_sheet.py` can still write a bcl-convert samplesheet before the run
+  - `libName` is required in the samplesheet
+- Reference genome: `--genome` selects a pre-built genome by name (`hg38` or `mm39`, `conf/genomes.config`), which is downloaded from the ScaleBio archives and unpacked (`--genomes_base` reads a mirror); your own `genome.json` is given with `--genome_json` (previously `--genome`)
+- MultiQC report (`multiqc/`) of FastQC, cutadapt and samtools flagstat (`--skip_multiqc`, `--multiqc_title`)
+- Channels carry nf-core style meta maps (`[id, sample, well]`) instead of names parsed from file names
 - bwa-meth is the only aligner: the `aligner` and `parabricksNumGpu` parameters, the BSBolt and Parabricks processes and the `dockerGPU` profile were removed
 - Parameters renamed to snake_case:
 
-  | Before                                                                              | Now                                                                                           |
-  | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-  | `samples`                                                                           | `input`                                                                                       |
-  | `outDir`                                                                            | `outdir`                                                                                      |
-  | `runFolder`, `fastqDir`, `fastqSamplesheet`, `bclConvertParams`                     | `run_folder`, `fastq_dir`, `fastq_samplesheet`, `bcl_convert_params`                          |
-  | `libStructure`, `splitFastq`, `calculateCH`, `chReadsThreshold`                     | `lib_structure`, `split_fastq`, `calculate_ch`, `ch_reads_threshold`                          |
-  | `covOut`, `allcOut`, `amethystOut`, `parquetOut`                                    | `cov_out`, `allc_out`, `amethyst_out`, `parquet_out`                                          |
-  | `fastqOut`, `trimOut`, `bamOut`, `bamDedupOut`                                      | `fastq_out`, `trim_out`, `bam_out`, `bam_dedup_out`                                           |
-  | `windowMatrixOut`, `windowTileSizeCG`, `windowTileSizeCH`, `minimumWindowSize`      | `window_matrix_out`, `window_tile_size_cg`, `window_tile_size_ch`, `minimum_window_size`      |
-  | `topCellPercentile`, `minCellRatio`, `minUniqCount`, `minUniqTotal`, `maxUniqTotal` | `top_cell_percentile`, `min_cell_ratio`, `min_uniq_count`, `min_uniq_total`, `max_uniq_total` |
-  | `dedupKey`, `minMapq`, `runTssEnrich`                                               | `dedup_key`, `min_mapq`, `run_tss_enrich`                                                     |
-  | `previousOutDir`, `startPostExtraction`, `reportingOnly`                            | `previous_outdir`, `start_post_extraction`, `reporting_only`                                  |
-  | `bam1Dir`, `bam2Dir`, `bamMergeOut`                                                 | `bam1_dir`, `bam2_dir`, `bam_merge_out`                                                       |
-  | `maxCpus`, `maxMemory`, `maxTime`                                                   | removed: use `process.resourceLimits` in a config file                                        |
-  | `trimFastq`, `bamRgHeader`                                                          | removed (they had no effect)                                                                  |
+  | Before    | Now     |
+  | --------- | ------- |
+  | `samples` | `input` |
+
+| `genome` (genome.json) | `genome_json`; `genome` now selects a pre-built genome (`hg38`, `mm39`) |
+| `outDir` | `outdir` |
+| `runFolder`, `fastqDir`, `fastqSamplesheet`, `bclConvertParams` | removed: fastq files are listed in the samplesheet |
+| `libStructure`, `splitFastq`, `calculateCH`, `chReadsThreshold` | `lib_structure`, `split_fastq`, `calculate_ch`, `ch_reads_threshold` |
+| `covOut`, `allcOut`, `amethystOut`, `parquetOut` | `cov_out`, `allc_out`, `amethyst_out`, `parquet_out` |
+| `fastqOut`, `trimOut`, `bamOut`, `bamDedupOut` | `fastq_out`, `trim_out`, `bam_out`, `bam_dedup_out` |
+| `windowMatrixOut`, `windowTileSizeCG`, `windowTileSizeCH`, `minimumWindowSize` | `window_matrix_out`, `window_tile_size_cg`, `window_tile_size_ch`, `minimum_window_size` |
+| `topCellPercentile`, `minCellRatio`, `minUniqCount`, `minUniqTotal`, `maxUniqTotal` | `top_cell_percentile`, `min_cell_ratio`, `min_uniq_count`, `min_uniq_total`, `max_uniq_total` |
+| `dedupKey`, `minMapq`, `runTssEnrich` | `dedup_key`, `min_mapq`, `run_tss_enrich` |
+| `previousOutDir`, `startPostExtraction`, `reportingOnly` | `previous_outdir`, `start_post_extraction`, `reporting_only` |
+| `bam1Dir`, `bam2Dir`, `bamMergeOut` | `bam1_dir`, `bam2_dir`, `bam_merge_out` |
+| `maxCpus`, `maxMemory`, `maxTime` | removed: use `process.resourceLimits` in a config file |
+| `trimFastq`, `bamRgHeader` | removed (they had no effect) |
 
 - Fixes
   - `genomeWindowBlackList` in `genome.json` is resolved relative to `genome.json`, like the other paths
+  - Parameters given on the command line as `true`/`false` or numbers are converted (with Nextflow 26 they stayed strings, so e.g. `--split_fastq false` had no effect)
+  - `--split_fastq false` no longer fails in the matrix generation (the per-sample and merged matrices had the same file names)
   - With `--reporting_only` and several samples, the reports of all samples are generated
   - The samples are always in the same (alphabetical) order in the library metrics (`<library>.combinedPassingCellStats.csv`) and library report
 

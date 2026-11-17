@@ -5,9 +5,7 @@ reports:
     display: "Sample QC Summary Report"
   "**/*.combinedPassingCellStats.csv":
     display: "Combined Passing Cell Statistics"
-  "fastq/Reports/Demultiplex_Stats.csv":
-    display: "bcl-convert demux stats"
-  "fastq/Reports/Top_Unknown_Barcodes.csv":
-    display: "bcl-convert top unknown barcodes stats"
+  "multiqc/multiqc_report.html":
+    display: "MultiQC report (read QC, trimming, alignment)"
   "samples.csv":
     display: "Regularized sample table"

@@ -48,7 +48,7 @@ The library structure file (`lib_structure`, a `.json` file) tells the workflow 
 | `bcl_convert.adapter`          | Optional adapter sequence for bcl-convert adapter trimming                                                 |
 | `bcl_convert.library_barcodes` | Optional file of named index sets that can be used in the `libIndex` columns                               |
 
-The `bcl_convert` section is only used when starting from a run folder. `OverrideCycles` in the file is not used; the workflow derives it from `RunInfo.xml`.
+The `bcl_convert` section is only used by `bin/bcl_convert_sheet.py`, which writes a bcl-convert samplesheet before the workflow is run (see [Generating fastq files](../user-guide/input-data.md#generating-fastq-files)). `OverrideCycles` in the file is not used; the helper derives it from `RunInfo.xml`.
 
 ### Barcodes
 

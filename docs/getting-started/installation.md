@@ -39,7 +39,6 @@ With `-profile conda`, Nextflow creates a conda environment with most dependenci
 
 - Update conda: `conda update -n base -c defaults conda`
 - Install the [ScaleBio tools](#scalebio-tools) (not available through conda)
-- When starting from a run folder, Illumina [BCL Convert](https://support.illumina.com/sequencing/sequencing_software/bcl-convert.html) must be installed and on `$PATH`.
 
 Automatic installation works best when the `base` conda environment is clean. See the [Nextflow conda documentation](https://www.nextflow.io/docs/latest/conda.html).
 

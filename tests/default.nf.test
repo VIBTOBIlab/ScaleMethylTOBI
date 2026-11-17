@@ -20,8 +20,8 @@ nextflow_pipeline {
             allFiles = allFiles.sort { relPath(it) }
 
             // Files whose content is not reproducible (timestamps, paths, binary
-            // formats with embedded metadata): only their presence is checked
-            def unstable = ~/.*(\.html|\.png|\.parquet|\.h5|\.tbi|workflow_info\.json)$/
+            // formats with embedded metadata, MultiQC): only their presence is checked
+            def unstable = ~/(multiqc\/.*|.*(\.html|\.png|\.parquet|\.h5|\.tbi|workflow_info\.json))$/
 
             // Cells are written in a different order on each run, so text and
             // gzipped outputs are compared by the md5 of their sorted lines
@@ -56,6 +56,32 @@ nextflow_pipeline {
                     gzFiles.collectEntries { [(relPath(it)): sortedMd5(path(it.path).linesGzip)] },
                     mtxFiles.collectEntries { [(relPath(it)): path(it.path).linesGzip.find { !it.startsWith("%") }] }
                 ).match() }
+            )
+        }
+    }
+
+    test("-profile test --genome hg38 (pre-built genome archive)") {
+        when {
+            params {
+                outdir        = "$outputDir"
+                genome_json   = null
+                // The synthetic test genome packed like the ScaleBio genome archives
+                genome        = "hg38"
+                genomes_base  = "${projectDir}/tests/data/genomes"
+                skip_multiqc  = true
+            }
+        }
+        then {
+            def published = []
+            new File(outputDir).eachFileRecurse(groovy.io.FileType.FILES) { published << it.toPath().toString() - "${outputDir}/" }
+            assertAll(
+                { assert workflow.success },
+                { assert !published.any { it.startsWith("multiqc/") } },
+                // Same cells as with --genome_json
+                { assert snapshot(
+                    path("$outputDir/samples/genome_bin_matrix/SampleA.barcodes.tsv").readLines().sort(),
+                    path("$outputDir/samples/genome_bin_matrix/SampleB.barcodes.tsv").readLines().sort()
+                ).match("barcodes") }
             )
         }
     }

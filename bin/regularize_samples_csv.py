@@ -15,6 +15,10 @@ from pathlib import Path
 from typing import Dict
 
 
+# Columns with the fastq files of a row (see assets/schema_input.json)
+FASTQ_COLUMNS = ["fastq_1", "fastq_2", "index_1", "index_2"]
+
+
 def validateName(name):
     """
     Check sample and library names for invalid characters
@@ -136,16 +140,23 @@ def main(samplesCsv: Path, splitFastq: bool, libraryStruct: Path, merge: bool):
         if "sample" not in cols:
             print("'sample' (the sample name) is required", file=sys.stderr)
             sys.exit(1)
+        # The fastq columns are handled by the workflow; a sample is listed once per fastq set
+        keep = [i for i, c in enumerate(cols) if c not in FASTQ_COLUMNS]
+        ncols = len(cols)
+        cols = [cols[i] for i in keep]
         for row in samples:
             if not row or len(row[0].strip()) == 0:
                 continue
             # Trim empty columns
-            while not row[-1] and len(row) > len(cols):
+            while not row[-1] and len(row) > ncols:
                 row = row[:-1]
 
-            if len(row) != len(cols):
+            if len(row) != ncols:
                 print("Unexpected number of columns:", row, sep="\n", file=sys.stderr)
                 sys.exit(1)
+            row = [row[i] for i in keep]
+            if row in rows.values():
+                continue
             sample = row[cols.index("sample")].strip()
             libName = row[cols.index("libName")].strip()
             id = sample + "-" + libName
@@ -156,7 +167,10 @@ def main(samplesCsv: Path, splitFastq: bool, libraryStruct: Path, merge: bool):
                 if merge:
                     print(f"Duplicate sample/lib name/resultDir combination: {id}", file=sys.stderr)
                 else:
-                    print(f"Duplicate sample/lib name combination: {id}", file=sys.stderr)
+                    print(
+                        f"Duplicate sample/lib name combination with different settings: {id}",
+                        file=sys.stderr,
+                    )
                 sys.exit(1)
             rows[id] = row
     if "barcodes" not in cols:

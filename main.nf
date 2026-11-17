@@ -21,6 +21,45 @@ include { libStructurePath        } from './subworkflows/local/utils_nfcore_scal
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    PARAMETER TYPES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Defaults are in nextflow.config. Declaring the types makes Nextflow convert values given
+    on the command line (e.g. `--split_fastq false`), which would otherwise be strings.
+*/
+
+params {
+    // Booleans
+    split_fastq: Boolean
+    fastqc: Boolean
+    calculate_ch: Boolean
+    run_tss_enrich: Boolean
+    window_matrix_out: Boolean
+    cov_out: Boolean
+    allc_out: Boolean
+    amethyst_out: Boolean
+    parquet_out: Boolean
+    fastq_out: Boolean
+    trim_out: Boolean
+    bam_out: Boolean
+    bam_dedup_out: Boolean
+    bam_merge_out: Boolean
+    merged: Boolean
+    start_post_extraction: Boolean
+    reporting_only: Boolean
+    skip_multiqc: Boolean
+    plaintext_email: Boolean
+    monochrome_logs: Boolean
+    validate_params: Boolean
+    // Integers
+    min_mapq: Integer
+    min_uniq_count: Integer
+    window_tile_size_cg: Integer
+    window_tile_size_ch: Integer
+    minimum_window_size: Integer
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -31,8 +70,9 @@ include { libStructurePath        } from './subworkflows/local/utils_nfcore_scal
 workflow VIBTOBILAB_SCALEMETHYLTOBI {
 
     take:
-    samples_csv // path: samples.csv
-    genome_json // path: genome.json
+    samples_csv // path: samplesheet
+    genome_name // string: name of a pre-built genome (--genome) or null
+    genome_json // path: genome.json (--genome_json) or null
     lib_json    // path: library structure definition (.json)
 
     main:
@@ -42,6 +82,7 @@ workflow VIBTOBILAB_SCALEMETHYLTOBI {
     //
     SCALEMETHYLTOBI (
         samples_csv,
+        genome_name,
         genome_json,
         lib_json,
         params.outdir,
@@ -76,7 +117,8 @@ workflow {
     //
     VIBTOBILAB_SCALEMETHYLTOBI (
         file(params.input, checkIfExists: true),
-        file(params.genome, checkIfExists: true),
+        params.genome,
+        params.genome_json ? file(params.genome_json, checkIfExists: true) : null,
         libStructurePath(params.lib_structure)
     )
     //

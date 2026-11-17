@@ -26,7 +26,7 @@ nextflow run /PATH/TO/ScaleMethyl -profile docker -params-file runParams.yml \
 `--reporting_only true` runs only cell calling and report generation from the metrics of a previous run (`metrics_for_reporting/`). Use it after changing the `threshold` column in [samples.csv](samples-csv.md), or `min_uniq_total` / `max_uniq_total`.
 
 ```bash
-nextflow run /PATH/TO/ScaleMethyl -profile docker --genome genome.json \
+nextflow run /PATH/TO/ScaleMethyl -profile docker --genome hg38 \
     --input samples.csv --reporting_only true \
     --previous_outdir ScaleMethyl.out --outdir ScaleMethyl.reports
 ```

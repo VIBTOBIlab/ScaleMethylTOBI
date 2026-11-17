@@ -2,14 +2,17 @@
 
 ## Input and samples
 
-**`Library X does not have matching fastq files`**
-: The first part of the fastq file names (before the first `_`) must equal the `libName` in samples.csv. Rename the files or create [symbolic links](../user-guide/input-data.md#renaming-files) with the right names.
+**`No fastq files (fastq_1, fastq_2, index_1, index_2 columns) in samples.csv for library: X`**
+: Every library (`libName`) needs its fastq files in the fastq columns of at least one row of the samplesheet ([Fastq files](../user-guide/samples-csv.md#fastq-files)).
+
+**`File in the samplesheet ... not found`**
+: Relative fastq paths are resolved relative to the folder of the samplesheet, not the launch folder. Use absolute paths or paths relative to the samplesheet.
 
 **One sample gets most of the reads; other samples only one Tn5 well each**
 : The Tn5 ranges in samples.csv overlap. Ranges are read row by row, so `1A01-1G01` is 73 wells, not column 1, and each overlapping well goes to the last sample listing it. List column-wise wells individually ([Sample table](../user-guide/samples-csv.md#specifying-tn5-wells)).
 
-**`bc_parser` fails for some fastq sets when starting from a run folder**
-: bcl-convert writes (empty) fastq files for every barcode in the samplesheet. Restrict the PCR wells to those you sequenced with `libIndex` / `libIndex2` in samples.csv.
+**`bc_parser` fails for some fastq sets**
+: bcl-convert writes (empty) fastq files for every barcode in its samplesheet. Do not list the empty sets, or restrict the PCR wells to those you sequenced with `libIndex` / `libIndex2` when writing the bcl-convert samplesheet with `bin/bcl_convert_sheet.py`.
 
 ## Barcode metrics
 

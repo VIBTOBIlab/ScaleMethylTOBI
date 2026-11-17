@@ -67,6 +67,15 @@
                 "metrics_for_reporting/SampleB.mapping_stats.csv",
                 "metrics_for_reporting/SampleB.trimming_stats.csv",
                 "metrics_for_reporting/SampleB.tss_enrich.csv",
+                "multiqc/multiqc_data/multiqc.log",
+                "multiqc/multiqc_data/multiqc_citations.txt",
+                "multiqc/multiqc_data/multiqc_cutadapt.txt",
+                "multiqc/multiqc_data/multiqc_data.json",
+                "multiqc/multiqc_data/multiqc_fastqc.txt",
+                "multiqc/multiqc_data/multiqc_general_stats.txt",
+                "multiqc/multiqc_data/multiqc_samtools_flagstat.txt",
+                "multiqc/multiqc_data/multiqc_sources.txt",
+                "multiqc/multiqc_report.html",
                 "report/library_report/ScaleMethyl/ScaleMethyl.combinedPassingCellStats.csv",
                 "report/library_report/ScaleMethyl/ScaleMethyl.report.html",
                 "report/library_report/ScaleMethyl/csv/ScaleMethyl.median_unique_reads_i5_i7.csv",
@@ -360,10 +369,10 @@
                 "samples/genome_bin_matrix/SampleB.CH.mtx.gz": "5 6 24"
             }
         ],
-        "timestamp": "2026-11-17T14:41:28.311258",
+        "timestamp": "2026-11-17T19:42:07.455011",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "24.04.4"
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.6"
         }
     },
     "software_versions": {
@@ -434,6 +443,9 @@
                 "MET_EXTRACT": {
                     "python": "3.10.12"
                 },
+                "MULTIQC": {
+                    "multiqc": 1.14
+                },
                 "REGULARIZE_SAMPLES_CSV": {
                     "python": "3.10.12"
                 },
@@ -449,7 +461,32 @@
                 }
             }
         ],
-        "timestamp": "2026-11-17T16:10:53.161585",
+        "timestamp": "2026-11-17T19:42:07.326747",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.6"
+        }
+    },
+    "barcodes": {
+        "content": [
+            [
+                "AAGCATCCTA+AAGAATGGAA+AGGTTATA",
+                "ATCCATCAGG+TTCTTCCGGT+AGGTTATA",
+                "ATGAGTTCTC+CTCCAAGGAT+AGGTTATA",
+                "GCCGTCGCGT+TATTACTCAT+GAACCGCG",
+                "TAGTACTATC+TTGCCTTGGC+GAACCGCG",
+                "TTCAATATAA+GGCAATGAGA+GAACCGCG"
+            ],
+            [
+                "CGAATCTCCT+TCGTAGGCTT+CATAGAGT",
+                "GCCATCAACT+CTCCAAGGAT+ACAGGCGC",
+                "GCCGTCGCGT+GTAGCTCCAT+GTGAATAT",
+                "GTCTCCAGAG+TATTACTCAT+CATAGAGT",
+                "TGATGCATCG+TAACTCAATT+GTGAATAT",
+                "TTCAATATAA+CTCCAAGGAT+ACAGGCGC"
+            ]
+        ],
+        "timestamp": "2026-11-17T19:38:18.036043",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.10.6"

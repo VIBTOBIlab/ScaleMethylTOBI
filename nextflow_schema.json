@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "genome", "outdir"],
+            "required": ["input", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -19,34 +19,9 @@
                     "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Path to samples.csv with the sample names and their sample (Tn5) barcodes.",
-                    "help_text": "Comma-separated file with a header row and one row per sample. Required column: `sample`. Optional columns: `barcodes` (well ranges, e.g. `1A01-1H12`), `libName` (fastq file prefix of the library), `threshold` (manual unique-read cell threshold) and `resultDir` (output directory of a previous run, used with `--merged`). See docs/user-guide/samples-csv.md.",
+                    "description": "Samplesheet: the samples with their Tn5 barcodes and the fastq files of their libraries.",
+                    "help_text": "Comma-separated file with a header row. Required columns: `sample` and `libName`. Fastq columns: `fastq_1` (R1), `fastq_2` (R2), `index_1` (I1) and `index_2` (I2) of the library; give them in at least one row per library and add rows for more sequencing runs. Optional columns: `barcodes`, `threshold`, `resultDir`. Relative fastq paths are relative to the samplesheet. See docs/user-guide/samples-csv.md.",
                     "fa_icon": "fas fa-file-csv"
-                },
-                "genome": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.json$",
-                    "description": "Path to genome.json with the bwa-meth index and the genome annotation files.",
-                    "help_text": "See docs/user-guide/reference-genomes.md for the format. Paths in genome.json are relative to the directory of genome.json.",
-                    "fa_icon": "fas fa-book"
-                },
-                "fastq_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "Directory with the fastq files (R1, R2, I1 and I2) of the libraries.",
-                    "help_text": "Fastq file names must start with the library name (`libName` in samples.csv). Use either `--fastq_dir` or `--run_folder`.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "run_folder": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "Sequencer run folder (BCL files); fastq files are generated with bcl-convert.",
-                    "help_text": "Use either `--fastq_dir` or `--run_folder`.",
-                    "fa_icon": "fas fa-folder-open"
                 },
                 "lib_structure": {
                     "type": "string",
@@ -71,24 +46,35 @@
                 }
             }
         },
-        "fastq_generation_options": {
-            "title": "Fastq generation options",
+        "reference_genome_options": {
+            "title": "Reference genome options",
             "type": "object",
-            "fa_icon": "fas fa-microchip",
-            "description": "Options for bcl-convert, used with --run_folder.",
+            "fa_icon": "fas fa-dna",
+            "description": "Reference genome: a pre-built genome by name (--genome) or your own genome.json (--genome_json).",
             "properties": {
-                "fastq_samplesheet": {
+                "genome": {
+                    "type": "string",
+                    "enum": ["hg38", "mm39"],
+                    "description": "Pre-built reference genome (conf/genomes.config): hg38 or mm39.",
+                    "help_text": "The ScaleBio genome archive is downloaded from --genomes_base and unpacked by the pipeline, in the work directory of the run. Give either --genome or --genome_json.",
+                    "fa_icon": "fas fa-book"
+                },
+                "genome_json": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "description": "Custom bcl-convert samplesheet replacing the one generated from samples.csv.",
-                    "fa_icon": "fas fa-file-csv"
+                    "pattern": "^\\S+\\.json$",
+                    "description": "Path to genome.json with the bwa-meth index and the genome annotation files, for genomes not in conf/genomes.config.",
+                    "help_text": "Paths in genome.json are relative to the directory of genome.json. See docs/user-guide/reference-genomes.md.",
+                    "fa_icon": "fas fa-file-code"
                 },
-                "bcl_convert_params": {
+                "genomes_base": {
                     "type": "string",
-                    "default": "--no-lane-splitting true",
-                    "description": "Additional bcl-convert parameters.",
-                    "fa_icon": "fas fa-cog"
+                    "default": "https://s3.us-east-2.amazonaws.com/scale.pub/genomes/methyl",
+                    "description": "Location (URL) of the pre-built genome archives.",
+                    "help_text": "Change it to use a mirror of the ScaleBio archives (an http(s) URL).",
+                    "fa_icon": "fas fa-cloud-download-alt",
+                    "hidden": true
                 }
             }
         },
@@ -293,6 +279,24 @@
                 }
             }
         },
+        "multiqc_options": {
+            "title": "MultiQC options",
+            "type": "object",
+            "fa_icon": "fas fa-chart-bar",
+            "description": "MultiQC report of the read QC, trimming and alignment statistics.",
+            "properties": {
+                "skip_multiqc": {
+                    "type": "boolean",
+                    "description": "Do not run MultiQC.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "multiqc_title": {
+                    "type": "string",
+                    "description": "Title of the MultiQC report.",
+                    "fa_icon": "fas fa-heading"
+                }
+            }
+        },
         "restart_options": {
             "title": "Restart and merge options",
             "type": "object",
@@ -465,7 +469,7 @@
             "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/$defs/fastq_generation_options"
+            "$ref": "#/$defs/reference_genome_options"
         },
         {
             "$ref": "#/$defs/preprocessing_options"
@@ -481,6 +485,9 @@
         },
         {
             "$ref": "#/$defs/output_options"
+        },
+        {
+            "$ref": "#/$defs/multiqc_options"
         },
         {
             "$ref": "#/$defs/restart_options"
