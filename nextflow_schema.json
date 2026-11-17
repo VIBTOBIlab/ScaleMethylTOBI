@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/VIBTOBIlab/scalemethyltobi/master/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/VIBTOBIlab/scalemethyltobi/main/nextflow_schema.json",
     "title": "VIBTOBIlab/scalemethyltobi pipeline parameters",
     "description": "ScaleBio single-cell DNA methylation analysis workflow",
     "type": "object",
