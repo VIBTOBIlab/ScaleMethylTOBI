@@ -18,26 +18,29 @@
 - MultiQC report (`multiqc/`) of FastQC, cutadapt and samtools flagstat (`--skip_multiqc`, `--multiqc_title`)
 - Channels carry nf-core style meta maps (`[id, sample, well]`) instead of names parsed from file names
 - bwa-meth is the only aligner: the `aligner` and `parabricksNumGpu` parameters, the BSBolt and Parabricks processes and the `dockerGPU` profile were removed
-- Parameters renamed to snake_case:
+- Parameters renamed to the nf-core conventions (snake_case; `skip_*` for steps that run by default, `save_*` for published intermediate files):
 
-  | Before    | Now     |
-  | --------- | ------- |
-  | `samples` | `input` |
+  | Before                                                                              | Now                                                                                                 |
+  | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+  | `samples`                                                                           | `input`                                                                                             |
+  | `genome` (genome.json)                                                              | `genome_json`; `genome` now selects a pre-built genome (`hg38`, `mm39`)                             |
+  | `outDir`                                                                            | `outdir`                                                                                            |
+  | `runFolder`, `fastqDir`, `fastqSamplesheet`, `bclConvertParams`                     | removed: fastq files are listed in the samplesheet                                                  |
+  | `libStructure`, `splitFastq`, `chReadsThreshold`                                    | `lib_structure`, `split_fastq`, `ch_reads_threshold`                                                |
+  | `calculateCH`, `runTssEnrich`, `windowMatrixOut` (default `true`)                   | `skip_ch_context`, `skip_tss_enrich`, `skip_window_matrix` (default `false`)                        |
+  | `fastqc` (default `true`)                                                           | `skip_fastqc` (default `false`)                                                                     |
+  | `covOut`, `allcOut`, `amethystOut` (default `true`)                                 | `skip_cov`, `skip_allc`, `skip_amethyst` (default `false`)                                          |
+  | `parquetOut`, `fastqOut`, `trimOut`, `bamOut`, `bamDedupOut`, `bamMergeOut`         | `save_parquet`, `save_demux_fastq`, `save_trimmed`, `save_bam`, `save_dedup_bam`, `save_merged_bam` |
+  | `windowTileSizeCG`, `windowTileSizeCH`, `minimumWindowSize`                         | `window_tile_size_cg`, `window_tile_size_ch`, `minimum_window_size`                                 |
+  | `topCellPercentile`, `minCellRatio`, `minUniqCount`, `minUniqTotal`, `maxUniqTotal` | `top_cell_percentile`, `min_cell_ratio`, `min_uniq_count`, `min_uniq_total`, `max_uniq_total`       |
+  | `dedupKey`, `minMapq`                                                               | `dedup_key`, `min_mapq`                                                                             |
+  | `previousOutDir`, `startPostExtraction`, `reportingOnly`, `merged`                  | `previous_outdir`, `start_post_extraction`, `reporting_only`, `merge_runs`                          |
+  | `bam1Dir`, `bam2Dir`                                                                | `bam1_dir`, `bam2_dir`                                                                              |
+  | `maxCpus`, `maxMemory`, `maxTime`                                                   | removed: use `process.resourceLimits` in a config file                                              |
+  | `trimFastq`, `bamRgHeader`                                                          | removed (they had no effect)                                                                        |
 
-| `genome` (genome.json) | `genome_json`; `genome` now selects a pre-built genome (`hg38`, `mm39`) |
-| `outDir` | `outdir` |
-| `runFolder`, `fastqDir`, `fastqSamplesheet`, `bclConvertParams` | removed: fastq files are listed in the samplesheet |
-| `libStructure`, `splitFastq`, `calculateCH`, `chReadsThreshold` | `lib_structure`, `split_fastq`, `calculate_ch`, `ch_reads_threshold` |
-| `covOut`, `allcOut`, `amethystOut`, `parquetOut` | `cov_out`, `allc_out`, `amethyst_out`, `parquet_out` |
-| `fastqOut`, `trimOut`, `bamOut`, `bamDedupOut` | `fastq_out`, `trim_out`, `bam_out`, `bam_dedup_out` |
-| `windowMatrixOut`, `windowTileSizeCG`, `windowTileSizeCH`, `minimumWindowSize` | `window_matrix_out`, `window_tile_size_cg`, `window_tile_size_ch`, `minimum_window_size` |
-| `topCellPercentile`, `minCellRatio`, `minUniqCount`, `minUniqTotal`, `maxUniqTotal` | `top_cell_percentile`, `min_cell_ratio`, `min_uniq_count`, `min_uniq_total`, `max_uniq_total` |
-| `dedupKey`, `minMapq`, `runTssEnrich` | `dedup_key`, `min_mapq`, `run_tss_enrich` |
-| `previousOutDir`, `startPostExtraction`, `reportingOnly` | `previous_outdir`, `start_post_extraction`, `reporting_only` |
-| `bam1Dir`, `bam2Dir`, `bamMergeOut` | `bam1_dir`, `bam2_dir`, `bam_merge_out` |
-| `maxCpus`, `maxMemory`, `maxTime` | removed: use `process.resourceLimits` in a config file |
-| `trimFastq`, `bamRgHeader` | removed (they had no effect) |
-
+- The samplesheet is read with nf-schema (`samplesheetToList`, `assets/schema_input.json`) in the pipeline initialisation, which replaces `bin/regularize_samples_csv.py`: the default barcodes (all wells of the library structure), the `split` column and the checks (conflicting rows of a sample, more than one sample of a library without barcodes) are done there; `samples.csv` in the output folder is unchanged
+- The main workflow is a short sequence of commented steps; the read processing up to the alignment is one subworkflow (`FASTQ_DEMUX_TRIM_ALIGN`) and the per-sample statistics are merged in `BAM_DEDUP_EXTRACT`
 - Fixes
   - `genomeWindowBlackList` in `genome.json` is resolved relative to `genome.json`, like the other paths
   - Parameters given on the command line as `true`/`false` or numbers are converted (with Nextflow 26 they stayed strings, so e.g. `--split_fastq false` had no effect)

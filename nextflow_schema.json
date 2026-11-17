@@ -90,11 +90,10 @@
                     "description": "Split the demultiplexed fastq files by sample and Tn5 well for increased parallelization.",
                     "fa_icon": "fas fa-random"
                 },
-                "fastqc": {
+                "skip_fastqc": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Run FastQC on the input fastq files.",
-                    "fa_icon": "fas fa-check-square"
+                    "description": "Do not run FastQC on the input fastq files.",
+                    "fa_icon": "fas fa-fast-forward"
                 },
                 "adapters": {
                     "type": "string",
@@ -124,11 +123,10 @@
                     "description": "Minimum mapping quality of the reads kept by sc_dedup.",
                     "fa_icon": "fas fa-filter"
                 },
-                "calculate_ch": {
+                "skip_ch_context": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Calculate CH methylation (reports, parquet files and matrices).",
-                    "fa_icon": "fas fa-check-square"
+                    "description": "Do not calculate CH methylation (reports, parquet files and matrices).",
+                    "fa_icon": "fas fa-fast-forward"
                 },
                 "ch_reads_threshold": {
                     "type": "number",
@@ -184,11 +182,10 @@
                     "description": "Maximum percentage of unique out of total reads of a cell.",
                     "fa_icon": "fas fa-percent"
                 },
-                "run_tss_enrich": {
+                "skip_tss_enrich": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Compute the per-cell TSS enrichment.",
-                    "fa_icon": "fas fa-check-square"
+                    "description": "Do not compute the per-cell TSS enrichment.",
+                    "fa_icon": "fas fa-fast-forward"
                 }
             }
         },
@@ -198,11 +195,10 @@
             "fa_icon": "fas fa-th",
             "description": "Matrices with the methylation signal per genome bin.",
             "properties": {
-                "window_matrix_out": {
+                "skip_window_matrix": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Generate matrices with the methylation signal per genome bin.",
-                    "fa_icon": "fas fa-th"
+                    "description": "Do not generate the matrices with the methylation signal per genome bin.",
+                    "fa_icon": "fas fa-fast-forward"
                 },
                 "window_tile_size_cg": {
                     "type": "integer",
@@ -228,53 +224,50 @@
             }
         },
         "output_options": {
-            "title": "Optional output files",
+            "title": "Skipped steps and published files",
             "type": "object",
             "fa_icon": "fas fa-file-export",
-            "description": "Select which optional files are published.",
+            "description": "Skip optional steps and outputs, or publish intermediate files.",
             "properties": {
-                "cov_out": {
+                "skip_cov": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Per-cell methylation coverage in Bismark .cov format.",
-                    "fa_icon": "fas fa-file"
+                    "description": "Do not write the per-cell methylation coverage in Bismark .cov format.",
+                    "fa_icon": "fas fa-fast-forward"
                 },
-                "allc_out": {
+                "skip_allc": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Per-cell methylation coverage in .allc format (ALLCools).",
-                    "fa_icon": "fas fa-file"
+                    "description": "Do not write the per-cell methylation coverage in .allc format (ALLCools).",
+                    "fa_icon": "fas fa-fast-forward"
                 },
-                "amethyst_out": {
+                "skip_amethyst": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Per-cell methylation coverage in Amethyst hdf5 format.",
-                    "fa_icon": "fas fa-file"
+                    "description": "Do not write the per-cell methylation coverage in Amethyst hdf5 format.",
+                    "fa_icon": "fas fa-fast-forward"
                 },
-                "parquet_out": {
+                "save_parquet": {
                     "type": "boolean",
                     "default": true,
                     "description": "Methylation calls (parquet), needed to restart with --start_post_extraction.",
                     "fa_icon": "fas fa-file"
                 },
-                "fastq_out": {
+                "save_demux_fastq": {
                     "type": "boolean",
-                    "description": "Demultiplexed fastq files.",
+                    "description": "Publish the demultiplexed fastq files.",
                     "fa_icon": "fas fa-file"
                 },
-                "trim_out": {
+                "save_trimmed": {
                     "type": "boolean",
-                    "description": "Adapter-trimmed fastq files.",
+                    "description": "Publish the adapter-trimmed fastq files.",
                     "fa_icon": "fas fa-file"
                 },
-                "bam_out": {
+                "save_bam": {
                     "type": "boolean",
-                    "description": "BAM files with all aligned reads.",
+                    "description": "Publish the BAM files with all aligned reads.",
                     "fa_icon": "fas fa-file"
                 },
-                "bam_dedup_out": {
+                "save_dedup_bam": {
                     "type": "boolean",
-                    "description": "BAM files with unique (deduplicated) reads.",
+                    "description": "Publish the BAM files with unique (deduplicated) reads.",
                     "fa_icon": "fas fa-file"
                 }
             }
@@ -310,7 +303,7 @@
                     "description": "Output directory of a previous run, used with --reporting_only or --start_post_extraction.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "merged": {
+                "merge_runs": {
                     "type": "boolean",
                     "description": "Merge the previous runs listed in the resultDir column of samples.csv.",
                     "fa_icon": "fas fa-object-group"
@@ -339,7 +332,7 @@
                     "description": "alignments/bam directory of a previous run, merged with --bam1_dir.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "bam_merge_out": {
+                "save_merged_bam": {
                     "type": "boolean",
                     "description": "Publish the merged BAM files.",
                     "fa_icon": "fas fa-file"

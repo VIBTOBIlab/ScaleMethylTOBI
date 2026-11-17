@@ -28,6 +28,7 @@ Column names are case-sensitive.
 | `resultDir` | Output folder of a previous run, see [merging runs](restarting-and-merging.md) | `run1.out`            |                                                            |
 
 - `sample` and `libName` may contain only letters, numbers and dashes (`-`), and should start with a letter.
+- A sample without `barcodes` gets all wells of the library structure, so only one sample per library can leave `barcodes` empty.
 - `libIndex` / `libIndex2` (subsets of the i7 / i5 sequences) are only used by the bcl-convert samplesheet helper, see [Input data](input-data.md#generating-fastq-files).
 
 ## Fastq files

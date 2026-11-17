@@ -30,20 +30,20 @@ include { libStructurePath        } from './subworkflows/local/utils_nfcore_scal
 params {
     // Booleans
     split_fastq: Boolean
-    fastqc: Boolean
-    calculate_ch: Boolean
-    run_tss_enrich: Boolean
-    window_matrix_out: Boolean
-    cov_out: Boolean
-    allc_out: Boolean
-    amethyst_out: Boolean
-    parquet_out: Boolean
-    fastq_out: Boolean
-    trim_out: Boolean
-    bam_out: Boolean
-    bam_dedup_out: Boolean
-    bam_merge_out: Boolean
-    merged: Boolean
+    skip_fastqc: Boolean
+    skip_ch_context: Boolean
+    skip_tss_enrich: Boolean
+    skip_window_matrix: Boolean
+    skip_cov: Boolean
+    skip_allc: Boolean
+    skip_amethyst: Boolean
+    save_parquet: Boolean
+    save_demux_fastq: Boolean
+    save_trimmed: Boolean
+    save_bam: Boolean
+    save_dedup_bam: Boolean
+    save_merged_bam: Boolean
+    merge_runs: Boolean
     start_post_extraction: Boolean
     reporting_only: Boolean
     skip_multiqc: Boolean
@@ -70,10 +70,12 @@ params {
 workflow VIBTOBILAB_SCALEMETHYLTOBI {
 
     take:
-    samples_csv // path: samplesheet
-    genome_name // string: name of a pre-built genome (--genome) or null
-    genome_json // path: genome.json (--genome_json) or null
-    lib_json    // path: library structure definition (.json)
+    ch_samples    // channel: [ map ] one per sample, from the samplesheet
+    ch_fastq_sets // channel: [ meta, fastq_1, fastq_2, index_1, index_2 ] one per library and sequencing run
+    samples_csv   // channel: CSV text of the samples
+    genome_name   // string: name of a pre-built genome (--genome) or null
+    genome_json   // path: genome.json (--genome_json) or null
+    lib_json      // path: library structure definition (.json)
 
     main:
 
@@ -81,6 +83,8 @@ workflow VIBTOBILAB_SCALEMETHYLTOBI {
     // WORKFLOW: Run pipeline
     //
     SCALEMETHYLTOBI (
+        ch_samples,
+        ch_fastq_sets,
         samples_csv,
         genome_name,
         genome_json,
@@ -116,7 +120,9 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     VIBTOBILAB_SCALEMETHYLTOBI (
-        file(params.input, checkIfExists: true),
+        PIPELINE_INITIALISATION.out.samples,
+        PIPELINE_INITIALISATION.out.fastq_sets,
+        PIPELINE_INITIALISATION.out.samples_csv,
         params.genome,
         params.genome_json ? file(params.genome_json, checkIfExists: true) : null,
         libStructurePath(params.lib_structure)

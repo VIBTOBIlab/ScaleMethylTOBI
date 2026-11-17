@@ -1,21 +1,34 @@
 //
-// Deduplicate aligned reads per cell and extract the methylation calls
+// From alignments per sample and Tn5 well to methylation calls and per-sample statistics:
+//   1. Deduplication per cell barcode (sc_dedup)
+//   2. Methylation calls per cell (met_extract), for wells with passing reads
+//   3. Per-sample statistics: the per-well files (and the trimming / alignment statistics,
+//      when starting from fastq files) are merged per sample for the reports
 //
 
 include { SC_DEDUP    } from '../../../modules/local/sc_dedup'
 include { MET_EXTRACT } from '../../../modules/local/met_extract'
+include { MERGE_STATS } from '../../../modules/local/merge_stats'
 
 workflow BAM_DEDUP_EXTRACT {
 
     take:
-    ch_bam      // channel: [ meta, bam ] aligned reads per sample and Tn5 well
-    ch_ref      // channel: [ bwa-meth index directory, reference fasta name ]
-    filter_chrs // channel: path(chromosome labels used by sc_dedup)
+    ch_bam               // channel: [ meta, bam ] aligned reads per sample and Tn5 well
+    ch_ref               // channel: [ bwa-meth index directory, reference fasta name ]
+    filter_chrs          // channel: path(chromosome labels used by sc_dedup)
+    ch_align_logs        // channel: [ meta, bwa_meth.log ] per sample and Tn5 well (empty without trimming_and_mapping)
+    ch_trim_stats        // channel: [ meta, trim_stats.json ] per sample and Tn5 well (empty without trimming_and_mapping)
+    trimming_and_mapping // boolean: trimming and alignment statistics are available (start from fastq files)
 
     main:
+    //
+    // 1. Deduplicate reads per cell barcode
+    //
     SC_DEDUP(ch_bam, filter_chrs)
 
-    // Skip methylation extraction for wells without passing reads
+    //
+    // 2. Extract the methylation calls (skip wells without passing reads)
+    //
     MET_EXTRACT(
         SC_DEDUP.out.bam
             .join(SC_DEDUP.out.total_reads)
@@ -23,25 +36,41 @@ workflow BAM_DEDUP_EXTRACT {
         ch_ref
     )
 
-    // Group the per-well files by sample: [ [ id: sample ], [ files ] ]
-    def ch_cell_stats = SC_DEDUP.out.cell_stats
-        .map { meta, f -> [[id: meta.sample], f] }
-        .groupTuple()
-    def ch_fragment_hist = SC_DEDUP.out.fragment_hist
-        .map { meta, f -> [[id: meta.sample], f] }
-        .groupTuple()
-    def ch_cell_info = MET_EXTRACT.out.cell_info
-        .map { meta, f -> [[id: meta.sample], f] }
-        .groupTuple()
-    def ch_dedup_stats = SC_DEDUP.out.dedup_stats
-        .map { meta, f -> [[id: meta.sample], f] }
-        .groupTuple()
+    //
+    // 3. Merge the per-well statistics of each sample
+    //
+    // [ [ id: sample ], [ cell_stats ], [ fragment_hist ], [ cellInfo ], [ dedup_stats ] ]
+    def ch_well_stats = bySample(SC_DEDUP.out.cell_stats)
+        .join(bySample(SC_DEDUP.out.fragment_hist))
+        .join(bySample(MET_EXTRACT.out.cell_info))
+        .join(bySample(SC_DEDUP.out.dedup_stats))
+    // + [ [ aligner logs ], [ trimming stats ] ] (empty lists when starting from BAM files)
+    def ch_merge_input = trimming_and_mapping
+        ? ch_well_stats.join(bySample(ch_align_logs)).join(bySample(ch_trim_stats))
+        : ch_well_stats.map { row -> row + [[], []] }
+    MERGE_STATS(ch_merge_input)
 
     emit:
-    reads_frags = ch_cell_stats.join(ch_fragment_hist) // channel: [ meta, [ cell_stats.tsv ], [ fragment_hist.tsv ] ]
-    cell_info   = ch_cell_info                         // channel: [ meta, [ cellInfo.txt ] ]
-    dedup_stats = ch_dedup_stats                       // channel: [ meta, [ dedup_stats.tsv ] ]
-    dedup_bam   = SC_DEDUP.out.bam                     // channel: [ meta, dedup.bam ] per sample and Tn5 well
-    met_cg      = MET_EXTRACT.out.met_cg               // channel: [ meta, met_CG.parquet ] per sample and Tn5 well
-    met_ch      = MET_EXTRACT.out.met_ch               // channel: [ meta, met_CH.parquet ] per sample and Tn5 well
+    merged_stats               = MERGE_STATS.out.merged_stats               // channel: [ meta, cell_stats.csv, cellInfo.csv ] per sample
+    fragment_hist              = MERGE_STATS.out.fragment_hist              // channel: [ meta, fragment_hist.csv ]
+    dedup_stats                = MERGE_STATS.out.dedup_stats                // channel: [ meta, dedup_stats.csv ]
+    trimming_and_mapping_stats = MERGE_STATS.out.trimming_and_mapping_stats // channel: [ meta, mapping_stats.csv, trimming_stats.csv ]
+    dedup_bam                  = SC_DEDUP.out.bam                           // channel: [ meta, dedup.bam ] per sample and Tn5 well
+    met_cg                     = MET_EXTRACT.out.met_cg.groupTuple()        // channel: [ meta, [ met_CG.parquet ] ] per sample and Tn5 well
+    met_ch                     = MET_EXTRACT.out.met_ch.groupTuple()        // channel: [ meta, [ met_CH.parquet ] ] per sample and Tn5 well
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+//
+// Group per-well files by sample: [ well meta, file ] -> [ [ id: sample ], [ files ] ]
+//
+def bySample(ch_files) {
+    return ch_files
+        .map { meta, f -> [[id: meta.sample], f] }
+        .groupTuple()
 }

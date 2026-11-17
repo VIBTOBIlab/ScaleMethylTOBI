@@ -1,4 +1,4 @@
-// Combine dedup stats and fragment histograms of the same sample from multiple previous runs (--merged)
+// Combine dedup stats and fragment histograms of the same sample from multiple previous runs (--merge_runs)
 process COMBINE_SUMMARY_CSVS {
     tag "${meta.id}"
     label 'process_single'

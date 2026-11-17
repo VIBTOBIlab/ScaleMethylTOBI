@@ -1,7 +1,10 @@
 //
-// Prepare the reference genome: a pre-built genome selected by name (--genome, downloaded and
-// unpacked, see conf/genomes.config) or a genome.json (--genome_json); then the genome bins
-// used for the methylation matrices
+// Prepare the reference genome:
+//   1. The genome: a pre-built genome selected by name (--genome; the archive is downloaded and
+//      unpacked, see conf/genomes.config) or your own genome.json (--genome_json)
+//   2. chrom.sizes, from genome.json or created from the reference fasta (only to make bins)
+//   3. Genome bins for the CG and CH matrices, from genome.json or made from chrom.sizes with
+//      --window_tile_size_cg / --window_tile_size_ch
 //
 
 include { UNTAR_GENOME                               } from '../../../modules/local/untar_genome'
@@ -17,7 +20,7 @@ workflow PREPARE_GENOME {
 
     main:
     //
-    // The reference genome as a map with the paths of genome.json
+    // 1. The reference genome as a map with the paths of genome.json
     //
     def ch_genome = channel.empty()
     if (genome_json) {
@@ -34,10 +37,12 @@ workflow PREPARE_GENOME {
     def ch_ref = ch_genome.map { genome -> [genome.bwa_index, genome.ref_fasta] }
 
     //
-    // Genome bins for the CG and CH matrices: from the genome, or made from the chromosome sizes
+    // 2-3. Genome bins for the CG and CH matrices: from the genome, or made from the chromosome sizes.
+    //      The genome is only known at run time (pre-built archives), so the choice is made with
+    //      filter: a process only runs when its input channel is not empty.
     //
     def ch_make_cg = ch_genome.filter { genome -> !genome.genomeTiles }
-    def ch_make_ch = ch_genome.filter { genome -> !genome.genomeTilesCH && params.calculate_ch }
+    def ch_make_ch = ch_genome.filter { genome -> !genome.genomeTilesCH && !params.skip_ch_context }
 
     // chrom.sizes: from the genome, or created from the reference fasta when bins must be made
     def ch_needs_sizes = ch_make_cg.mix(ch_make_ch).first()
@@ -125,8 +130,8 @@ def loadGenome(json) {
     if (!genome.filter_chrs) {
         error("${json} must define 'filter_chrs' (chromosome labels for deduplication)")
     }
-    if (params.run_tss_enrich && !(genome.tssWin && genome.backgroundWin)) {
-        error("TSS enrichment needs 'tssWin' and 'backgroundWin' in ${json}; use --run_tss_enrich false to skip it")
+    if (!params.skip_tss_enrich && !(genome.tssWin && genome.backgroundWin)) {
+        error("TSS enrichment needs 'tssWin' and 'backgroundWin' in ${json}; use --skip_tss_enrich to skip it")
     }
     if (genome.genomeTiles && params.window_tile_size_cg) {
         log.warn("genomeTiles and --window_tile_size_cg are both set. Ignoring --window_tile_size_cg.")

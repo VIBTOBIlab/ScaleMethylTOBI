@@ -10,26 +10,37 @@
             "sample": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9-]+$",
-                "errorMessage": "Sample name must be provided and can only contain letters, digits and dashes"
-            },
-            "barcodes": {
-                "type": "string",
-                "pattern": "^[0-9A-Za-z;\\- ]*$",
-                "errorMessage": "Barcodes must be well coordinates or ranges separated by ';', e.g. 1A01-1H12;2A01-2H12"
+                "errorMessage": "Sample name must be provided and can only contain letters, digits and dashes",
+                "meta": ["id"]
             },
             "libName": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9-]+$",
-                "errorMessage": "Library name can only contain letters, digits and dashes"
+                "errorMessage": "Library name can only contain letters, digits and dashes",
+                "meta": ["lib"]
+            },
+            "barcodes": {
+                "type": "string",
+                "pattern": "^[0-9A-Za-z;\\- ]*$",
+                "errorMessage": "Barcodes must be well coordinates or ranges separated by ';', e.g. 1A01-1H12;2A01-2H12",
+                "meta": ["barcodes"]
             },
             "threshold": {
                 "type": "integer",
                 "minimum": 0,
-                "errorMessage": "Threshold must be a positive integer (unique reads per cell)"
+                "errorMessage": "Threshold must be a positive integer (unique reads per cell)",
+                "meta": ["threshold"]
             },
             "resultDir": {
                 "type": "string",
-                "errorMessage": "Output directory of a previous run (used with --merged)"
+                "errorMessage": "Output directory of a previous run (used with --merged)",
+                "meta": ["result_dir"]
+            },
+            "split": {
+                "type": "string",
+                "pattern": "^(true|false)?$",
+                "errorMessage": "split must be true or false",
+                "meta": ["split"]
             },
             "fastq_1": {
                 "type": "string",

@@ -1,5 +1,9 @@
 //
-// Call cells, compute per-cell metrics (incl. TSS enrichment) and combine them per library
+// Cells and metrics:
+//   1. Cell calling and per-cell metrics per sample (GENERATE_METRICS)
+//   2. TSS enrichment per sample and Tn5 well (not with --skip_tss_enrich; taken from the
+//      previous run when restarting)
+//   3. Library metrics: the metrics of all samples of a library, in sample order
 //
 
 include { GENERATE_METRICS          } from '../../../modules/local/generate_metrics'
@@ -16,7 +20,7 @@ workflow CELL_METRICS {
     ch_trim_map_stats      // channel: [ meta, mapping_stats.csv, trimming_stats.csv ] (only used with trimming_and_mapping)
     ch_tss_enrich          // channel: [ meta, tss_enrich.csv or [] ] from a previous run (only used with from_previous_run)
     ch_dedup_bam           // channel: [ meta, dedup.bam ] per sample and Tn5 well (only used without from_previous_run)
-    ch_samples             // channel: [ map ] rows of the regularized samples.csv
+    ch_samples             // channel: [ map ] one per sample, from the samplesheet
     lib_json               // path: library structure definition (.json)
     tss_bed                // channel: path(TSS windows)
     background_bed         // channel: path(background windows)
@@ -24,6 +28,9 @@ workflow CELL_METRICS {
     from_previous_run      // boolean: metrics are regenerated from the outputs of a previous run
 
     main:
+    //
+    // 1. Cell calling and per-cell metrics
+    //
     // [ meta, cell_stats, cellInfo, threshold, mapping_stats, trimming_stats ]
     def ch_metrics_input = trimming_and_mapping
         ? ch_merged_stats.join(ch_trim_map_stats)
@@ -37,11 +44,11 @@ workflow CELL_METRICS {
         : GENERATE_METRICS.out.all_cells.join(ch_fragment_hist).join(ch_dedup_stats).map { row -> row + [[], []] }
 
     //
-    // TSS enrichment per sample and Tn5 well
+    // 2. TSS enrichment per sample and Tn5 well
     //
     def ch_tss_by_sample = ch_tss_enrich
     if (!from_previous_run) {
-        if (params.run_tss_enrich) {
+        if (!params.skip_tss_enrich) {
             // [ well meta, allCells, dedup.bam ]
             def ch_tss_input = GENERATE_METRICS.out.all_cells
                 .combine(ch_dedup_bam.map { meta, bam -> [[id: meta.sample], meta, bam] }, by: 0)
@@ -62,7 +69,7 @@ workflow CELL_METRICS {
         .join(ch_samples.map { row -> [[id: row.sample], row.libName, row.barcodes] })
 
     //
-    // Combine the metrics of all samples of a library
+    // 3. Combine the metrics of all samples of a library
     //
     def ch_sample_lib = ch_samples.map { row -> [[id: row.sample], row.libName] }
     // The files are sorted by sample name so that the samples are always in the same order

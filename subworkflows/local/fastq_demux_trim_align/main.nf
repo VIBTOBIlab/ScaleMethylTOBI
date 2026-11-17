@@ -1,31 +1,36 @@
 //
-// Run FastQC, demultiplex the reads of each fastq set (library and sequencing run) by sample
-// and Tn5 well with barcode error correction (bc_parser), combine the sequencing runs and
-// trim adapters (cutadapt)
+// From fastq files to alignments per sample and Tn5 well:
+//   1. FastQC of every input fastq file
+//   2. Demultiplexing of each fastq set (library and sequencing run) by sample and Tn5 well,
+//      with barcode error correction (bc_parser); the bc_parser metrics are merged per library
+//   3. Adapter trimming (cutadapt); the sequencing runs of a library are combined here
+//   4. Alignment with bwa-meth
 //
 
-include { FASTQC      } from '../../../modules/local/fastqc'
-include { BC_PARSER   } from '../../../modules/local/bc_parser'
-include { MERGE_DEMUX } from '../../../modules/local/merge_demux'
-include { CUTADAPT    } from '../../../modules/local/cutadapt'
+include { FASTQC        } from '../../../modules/local/fastqc'
+include { BC_PARSER     } from '../../../modules/local/bc_parser'
+include { MERGE_DEMUX   } from '../../../modules/local/merge_demux'
+include { CUTADAPT      } from '../../../modules/local/cutadapt'
+include { BWAMETH_ALIGN } from '../../../modules/local/bwameth_align'
 
-workflow FASTQ_DEMUX_TRIM {
+workflow FASTQ_DEMUX_TRIM_ALIGN {
 
     take:
     ch_fastq_sets  // channel: [ meta, fastq_1, fastq_2, index_1, index_2 or [] ] one per library and sequencing run
-    ch_samples     // channel: [ map ] one row of the regularized samples.csv
-    ch_samples_csv // channel: path(samples.csv) regularized samples.csv
+    ch_samples     // channel: [ map ] one per sample (from the samplesheet)
+    samples_csv    // channel: CSV text of the samples, read by bc_parser
     lib_json       // path: library structure definition (.json)
+    ch_ref         // channel: [ bwa-meth index directory, reference fasta name ]
 
     main:
     //
-    // FastQC of every input fastq file
+    // 1. FastQC of every input fastq file
     //
     def ch_fastqc_zip = channel.empty()
-    if (params.fastqc) {
+    if (!params.skip_fastqc) {
         def adapters = params.adapters ?: "${projectDir}/references/SciMETv2_Adapters.tsv"
+        // [ [ id: unique report name ], fastq ] in the order fastq_1, fastq_2, index_1, index_2
         def ch_fastqc_input = ch_fastq_sets.flatMap { meta, fastq_1, fastq_2, index_1, index_2 ->
-            // Same order as the fastq files in the samplesheet: fastq_1, fastq_2, index_1, index_2
             [fastq_1, fastq_2, index_1, index_2]
                 .withIndex()
                 .findAll { fq, _idx -> fq }
@@ -36,11 +41,12 @@ workflow FASTQ_DEMUX_TRIM {
     }
 
     //
-    // Demultiplex reads by sample (and Tn5 well) with barcode error correction
+    // 2. Demultiplex each fastq set by sample (and Tn5 well) with barcode error correction
     //
-    BC_PARSER(ch_samples_csv, lib_json.getParent(), lib_json.getName(), ch_fastq_sets)
+    BC_PARSER(samples_csv, lib_json.getParent(), lib_json.getName(), ch_fastq_sets)
 
-    // [ sample.well (or sample) meta, [ R1 fastq files of all sequencing runs ] ]
+    // Demultiplexed reads of all fastq sets (sequencing runs), grouped per sample and Tn5 well:
+    // [ [ id: sample.well, sample, well ], [ R1 fastq files ] ] and the same for R2
     def ch_read1 = BC_PARSER.out.read1_fastq
         .transpose()
         .map { _meta, fq -> [demuxMeta(fq, params.split_fastq), fq] }
@@ -69,16 +75,23 @@ workflow FASTQ_DEMUX_TRIM {
     )
 
     //
-    // Trim adapters; the reads of all sequencing runs are combined here
+    // 3. Trim adapters; the reads of all sequencing runs are combined here
     //
     CUTADAPT(ch_read1.join(ch_read2))
 
+    //
+    // 4. Align with bwa-meth
+    //
+    BWAMETH_ALIGN(CUTADAPT.out.fastq, ch_ref)
+
     emit:
-    trim_fastq    = CUTADAPT.out.fastq              // channel: [ meta, [ R1, R2 ] ]
+    bam           = BWAMETH_ALIGN.out.bam           // channel: [ meta, bam ] per sample and Tn5 well
+    align_log     = BWAMETH_ALIGN.out.log           // channel: [ meta, bwa_meth.log ] (samtools flagstat, tsv)
+    flagstat      = BWAMETH_ALIGN.out.flagstat      // channel: [ meta, flagstat.txt ] (for MultiQC)
     trim_stats    = CUTADAPT.out.stats              // channel: [ meta, trim_stats.json ]
-    trim_log      = CUTADAPT.out.log                // channel: [ meta, trim_log ]
+    trim_log      = CUTADAPT.out.log                // channel: [ meta, trim_log ] (for MultiQC)
     demux_metrics = MERGE_DEMUX.out.barcode_metrics // channel: [ [ id: libName ], metrics.json ]
-    fastqc_zip    = ch_fastqc_zip                   // channel: [ meta, fastqc.zip ]
+    fastqc_zip    = ch_fastqc_zip                   // channel: [ meta, fastqc.zip ] (for MultiQC)
 }
 
 /*

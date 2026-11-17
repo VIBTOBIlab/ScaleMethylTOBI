@@ -163,28 +163,42 @@ pre-commit install   # run prettier, whitespace checks and `nextflow lint` befor
 
 The pipeline follows the nf-core template (`nf-core pipelines create`, see `.nf-core.yml`):
 
-| Path                                                        | Content                                                                           |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `main.nf`                                                   | Entry workflow: initialisation, main workflow, completion                         |
-| `workflows/scalemethyltobi.nf`                              | Main workflow                                                                     |
-| `subworkflows/local/`                                       | Pipeline steps (genome preparation, demultiplexing, deduplication, matrices, ...) |
-| `subworkflows/local/utils_nfcore_scalemethyltobi_pipeline/` | Parameter validation and completion tasks (incl. `workflow_info.json`)            |
-| `subworkflows/nf-core/`                                     | nf-core utility subworkflows (`nf-core subworkflows update`)                      |
-| `modules/local/<tool>/main.nf`                              | One process per module, with its tests in `modules/local/<tool>/tests/`           |
-| `bin/`                                                      | Python scripts called by the modules                                              |
-| `conf/base.config`                                          | Resources of the processes                                                        |
-| `conf/modules.config`                                       | Tool arguments (`ext.args`) and publishing paths of every process                 |
-| `conf/test.config`                                          | `test` profile on the synthetic dataset in `tests/data/`                          |
-| `references/`                                               | Library structures and barcode lists                                              |
-| `envs/`                                                     | Definition of the container and conda environment with all tools                  |
+| Path                                                        | Content                                                                     |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `main.nf`                                                   | Entry workflow: initialisation, main workflow, completion; parameter types  |
+| `workflows/scalemethyltobi.nf`                              | Main workflow: the steps below, in order                                    |
+| `subworkflows/local/utils_nfcore_scalemethyltobi_pipeline/` | Parameter validation, samplesheet reading (nf-schema), `workflow_info.json` |
+| `subworkflows/nf-core/`                                     | nf-core utility subworkflows (`nf-core subworkflows update`)                |
+| `modules/local/<tool>/main.nf`                              | One process per module, with its tests in `modules/local/<tool>/tests/`     |
+| `bin/`                                                      | Python scripts called by the modules (and `bcl_convert_sheet.py`)           |
+| `conf/base.config`                                          | Resources of the processes                                                  |
+| `conf/modules.config`                                       | Tool arguments (`ext.args`) and publishing paths of every process           |
+| `conf/genomes.config`                                       | Pre-built genomes for `--genome`                                            |
+| `conf/test.config`                                          | `test` profile on the synthetic dataset in `tests/data/`                    |
+| `references/`                                               | Library structures and barcode lists                                        |
+| `envs/`                                                     | Definition of the container and conda environment with all tools            |
+
+The main workflow runs these local subworkflows:
+
+| Step | Subworkflow              | Content                                                                                  |
+| ---- | ------------------------ | ---------------------------------------------------------------------------------------- |
+| 1    | `PREPARE_GENOME`         | Pre-built genome (download) or `genome.json`; chrom.sizes and genome bins                |
+| 2    | `FASTQ_DEMUX_TRIM_ALIGN` | FastQC, `bc_parser` per fastq set, cutadapt (sequencing runs combined), bwa-meth         |
+| 2    | `BAM_MERGE_RUNS`         | Instead of the above: merge the BAM files of two runs (`--bam1_dir`, `--bam2_dir`)       |
+| 3    | `BAM_DEDUP_EXTRACT`      | `sc_dedup`, methylation calls, per-sample statistics                                     |
+| 2-3  | `LOAD_PREVIOUS_RESULTS`  | Instead of 2-3: outputs of previous runs (`--reporting_only`, `--start_post_extraction`) |
+| 4    | `CELL_METRICS`           | Cell calling, per-cell metrics, TSS enrichment, library metrics                          |
+| 5    | `MATRIX_GENERATION`      | Genome-bin matrices and per-cell coverage files                                          |
+| 6    | `REPORTING`              | Sample and library html reports (MultiQC runs in the main workflow)                      |
 
 Conventions:
 
+- Channels carry nf-core meta maps: `[ id: sample.well, sample, well ]` per Tn5 well, `[ id: sample ]` per sample, `[ id: libName ]` per library.
 - Modules do not use `params`: options are passed as inputs or with `ext.args` / `ext.prefix` in `conf/modules.config`.
 - Nothing is published unless configured in `conf/modules.config`; the output paths are part of the pipeline test snapshot.
 - Each module emits the versions of its tools to the `versions` topic; they are collected in `pipeline_info/scalemethyltobi_software_versions.yml`.
-- All modules use the same container (`public.ecr.aws/o5l3p3e4/scale-methyl-tools`), except `BCLCONVERT`.
-- Parameters use snake_case and are described in `nextflow_schema.json` (`nf-core pipelines schema build`).
+- All modules use the same container (`public.ecr.aws/o5l3p3e4/scale-methyl-tools`).
+- Parameters use snake_case, `skip_*` for steps that run by default and `save_*` for published intermediate files; they are described in `nextflow_schema.json` (`nf-core pipelines schema build`). Boolean and integer parameters are also declared in the `params` block of `main.nf`, so that values given on the command line are converted.
 - Code must pass `nextflow lint .` (strict syntax).
 
 ### Tests

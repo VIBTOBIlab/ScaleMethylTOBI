@@ -1,6 +1,9 @@
 //
-// Generate the binned methylation matrices and the per-cell methylation coverage files
-// (ALLCools .allc, Bismark .cov and Amethyst .h5) for all passing cells
+// Matrices and per-cell methylation coverage files, for the passing cells:
+//   1. CG matrix: per Tn5 well, then merged per sample (not with --skip_window_matrix)
+//   2. CH matrix: the same for the CH context (not with --skip_ch_context)
+//   3. Per-cell coverage files: ALLCools .allc, Bismark .cov and Amethyst .h5
+//      (not with --skip_allc / --skip_cov / --skip_amethyst)
 //
 
 include { CREATE_MTX as CREATE_MTX_CG } from '../../../modules/local/create_mtx'
@@ -21,6 +24,9 @@ workflow MATRIX_GENERATION {
     ch_tiles_ch  // channel: path(bed) genome bins for the CH matrix
 
     main:
+    //
+    // 1. CG matrix
+    //
     // [ well meta, allCells, met_CG ]
     def ch_cg_pass = ch_all_cells
         .combine(ch_met_cg.map { meta, met -> [[id: meta.sample], meta, met] }, by: 0)
@@ -28,7 +34,7 @@ workflow MATRIX_GENERATION {
 
     def ch_cg_mtx = channel.empty()
     def ch_cg_mtx_barcodes = channel.empty()
-    if (params.window_matrix_out) {
+    if (!params.skip_window_matrix) {
         CREATE_MTX_CG(ch_tiles_cg, ch_cg_pass)
         // Combine the per-well matrices per sample, with barcodes in the same order as the cell metadata
         def ch_cg_mtx_per_sample = CREATE_MTX_CG.out.mtx
@@ -41,14 +47,17 @@ workflow MATRIX_GENERATION {
         ch_cg_mtx_barcodes = MERGE_MTX_CG.out.barcodes
     }
 
+    //
+    // 2. CH matrix
+    //
     def ch_ch_pass = channel.empty()
-    if (params.calculate_ch) {
+    if (!params.skip_ch_context) {
         // [ well meta, allCells, met_CH ]
         ch_ch_pass = ch_all_cells
             .combine(ch_met_ch.map { meta, met -> [[id: meta.sample], meta, met] }, by: 0)
             .map { _sample, allCells, meta, met -> [meta, allCells, met] }
 
-        if (params.window_matrix_out) {
+        if (!params.skip_window_matrix) {
             CREATE_MTX_CH(ch_tiles_ch, ch_ch_pass)
             def ch_ch_mtx_per_sample = CREATE_MTX_CH.out.mtx
                 .map { meta, mtx, barcodes, features -> [[id: meta.sample], mtx, barcodes, features] }
@@ -60,22 +69,22 @@ workflow MATRIX_GENERATION {
     }
 
     //
-    // Per-cell methylation coverage files
+    // 3. Per-cell methylation coverage files
     //
     // [ well meta, allCells, met, context ]
     def ch_met_context = ch_cg_pass
         .map { meta, allCells, met -> [meta, allCells, met, 'CG'] }
         .concat(ch_ch_pass.map { meta, allCells, met -> [meta, allCells, met, 'CH'] })
 
-    if (params.allc_out) {
+    if (!params.skip_allc) {
         CREATE_ALLC(ch_met_context)
     }
-    if (params.cov_out) {
+    if (!params.skip_cov) {
         CREATE_BISMARK(ch_met_context)
     }
-    if (params.amethyst_out) {
+    if (!params.skip_amethyst) {
         // [ well meta, allCells, met_CG, met_CH or [] ]
-        def ch_amethyst_input = params.calculate_ch
+        def ch_amethyst_input = !params.skip_ch_context
             ? ch_cg_pass.join(ch_ch_pass, by: [0, 1], failOnDuplicate: true, failOnMismatch: true)
             : ch_cg_pass.map { meta, allCells, met -> [meta, allCells, met, []] }
         CREATE_AMETHYST(ch_amethyst_input)

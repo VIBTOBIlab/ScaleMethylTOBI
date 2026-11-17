@@ -35,7 +35,7 @@ Per sample and Tn5 well, in `alignments/dedup/<sample>.<well>/`:
 
 | File                                | Description                                                          |
 | ----------------------------------- | -------------------------------------------------------------------- |
-| `<sample>.<well>.dedup.bam`         | Reads that are not duplicates (published with `bam_dedup_out: true`) |
+| `<sample>.<well>.dedup.bam`         | Reads that are not duplicates (published with `save_dedup_bam: true`) |
 | `<sample>.<well>.cell_stats.tsv`    | Read metrics per cell barcode                                        |
 | `<sample>.<well>.dedup_stats.tsv`   | Summary statistics of the deduplicated reads                         |
 | `<sample>.<well>.fragment_hist.tsv` | Fragment length histogram                                            |

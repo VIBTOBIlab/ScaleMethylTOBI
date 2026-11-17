@@ -30,19 +30,21 @@ Give either `genome` or `genome_json`; see [Reference genomes](reference-genomes
 | `genome_json`   |                                              | Your own `genome.json` with the bwa-meth index and annotation files                          |
 | `genomes_base`  | ScaleBio AWS S3 bucket                       | Location of the pre-built genome archives (URL or folder), e.g. a local mirror               |
 
-## Optional outputs
+## Skipped steps and published files
 
-| Parameter           | Default | Description                                                                                                                  |
-| ------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `fastq_out`         | `false` | Publish the demultiplexed sample fastq files                                                                                 |
-| `trim_out`          | `false` | Publish the trimmed fastq files (`fastq/trim/`)                                                                              |
-| `bam_out`           | `false` | Publish the aligned BAM files                                                                                                |
-| `bam_dedup_out`     | `false` | Publish the deduplicated BAM files                                                                                           |
-| `cov_out`           | `true`  | Per-cell methylation in bismark `.cov` format (`chr`, `pos`, `percent_methylated`, `methylated_count`, `unmethylated_count`) |
-| `allc_out`          | `true`  | Per-cell methylation in [ALLCools](https://lhqing.github.io/ALLCools/intro.html) format (tabix-indexed)                      |
-| `amethyst_out`      | `true`  | Per-cell methylation in [Amethyst](https://github.com/lrylaarsdam/amethyst) `.h5` format (Amethyst 1.0.0+)                   |
-| `parquet_out`       | `true`  | Publish the per-well methylation calls (`matrix_generation/`), needed for `start_post_extraction`                            |
-| `window_matrix_out` | `true`  | Genome-bin methylation matrices                                                                                              |
+Steps and outputs that run by default can be skipped with `skip_*`; intermediate files are published with `save_*`.
+
+| Parameter            | Default | Description                                                                                                                                         |
+| -------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skip_cov`           | `false` | Do not write the per-cell methylation in bismark `.cov` format (`chr`, `pos`, `percent_methylated`, `methylated_count`, `unmethylated_count`)       |
+| `skip_allc`          | `false` | Do not write the per-cell methylation in [ALLCools](https://lhqing.github.io/ALLCools/intro.html) format (tabix-indexed)                            |
+| `skip_amethyst`      | `false` | Do not write the per-cell methylation in [Amethyst](https://github.com/lrylaarsdam/amethyst) `.h5` format (Amethyst 1.0.0+)                          |
+| `skip_window_matrix` | `false` | Do not generate the genome-bin methylation matrices                                                                                                 |
+| `save_parquet`       | `true`  | Publish the per-well methylation calls (`matrix_generation/`), needed for `start_post_extraction`                                                  |
+| `save_demux_fastq`   | `false` | Publish the demultiplexed sample fastq files                                                                                                        |
+| `save_trimmed`       | `false` | Publish the trimmed fastq files (`fastq/trim/`)                                                                                                     |
+| `save_bam`           | `false` | Publish the aligned BAM files                                                                                                                       |
+| `save_dedup_bam`     | `false` | Publish the deduplicated BAM files                                                                                                                  |
 
 BAM and fastq outputs take a lot of time and storage; enable them only when needed.
 
@@ -53,7 +55,7 @@ BAM and fastq outputs take a lot of time and storage; enable them only when need
 | `window_tile_size_cg` | `50000`  | Bin size (bp) for the CG matrix; ignored when `genomeTiles` is set in `genome.json` |
 | `window_tile_size_ch` | `100000` | Bin size (bp) for the CH matrix; ignored when `genomeTilesCH` is set                |
 | `minimum_window_size` | `200`    | Bins smaller than this after removing blacklisted regions are dropped               |
-| `calculate_ch`        | `true`   | Calculate CH methylation (reports, matrices, coverage files)                        |
+| `skip_ch_context`     | `false`  | Do not calculate CH methylation (reports, matrices, coverage files)                  |
 
 ## Cell calling
 
@@ -82,8 +84,8 @@ To try a different threshold without rerunning everything, use the [reporting-on
 | `ch_reads_threshold` | `50`                               | Reads with more than this percentage of CH methylation are discarded as failed bisulfite conversion               |
 | `dedup_key`          | `Leftmost`                         | Position used by `sc_dedup` to identify duplicates; see [ScaleBio tools](../reference/scalebio-tools.md#sc_dedup) |
 | `min_mapq`           | `10`                               | Minimum mapping quality kept during deduplication                                                                 |
-| `run_tss_enrich`     | `true`                             | Calculate TSS enrichment (needs `tssWin` and `backgroundWin` in `genome.json`)                                    |
-| `fastqc`             | `true`                             | Run FastQC on all input fastq files                                                                               |
+| `skip_tss_enrich`    | `false`                            | Do not calculate the TSS enrichment (it needs `tssWin` and `backgroundWin` in `genome.json`)                      |
+| `skip_fastqc`        | `false`                            | Do not run FastQC on the input fastq files                                                                        |
 | `adapters`           | `references/SciMETv2_Adapters.tsv` | Adapter list used by FastQC                                                                                       |
 
 Adapter trimming always runs with fixed `cutadapt` settings: the reverse complement of the Tn5 adapter (`CTATCTCTTATA`) is trimmed from the 3' end of Read 1, the TruSeq adapter (`AGATCGGAAGAGC`) from the 3' end of Read 2, plus the last 10 bases of Read 2; reads shorter than 20 bp are dropped. The first 10 bases of Read 1 and the barcode and adapter at the start of Read 2 are removed during demultiplexing, as defined in the library structure.
@@ -102,9 +104,9 @@ Adapter trimming always runs with fixed `cutadapt` settings: the reverse complem
 | `start_post_extraction` | `false` | Start after methylation extraction; see [Restarting and merging](restarting-and-merging.md) |
 | `reporting_only`        | `false` | Only regenerate cell calling and reports                                                    |
 | `previous_outdir`       |         | Output folder of the previous run                                                           |
-| `merged`                | `false` | Merge several previous runs, using the `resultDir` column in samples.csv                    |
+| `merge_runs`            | `false` | Merge several previous runs, using the `resultDir` column in samples.csv                    |
 | `bam1_dir`, `bam2_dir`  |         | Start from the BAM files of two previous runs                                               |
-| `bam_merge_out`         | `false` | Publish the merged BAM files                                                                |
+| `save_merged_bam`       | `false` | Publish the merged BAM files                                                                |
 
 ## Compute resources
 

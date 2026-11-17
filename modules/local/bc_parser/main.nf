@@ -7,7 +7,7 @@ process BC_PARSER {
     container "public.ecr.aws/o5l3p3e4/scale-methyl-tools:2025-06-16-213106"
 
     input:
-    path samples_csv
+    val samples_csv     // Sample table as CSV text (sample, barcodes, libName, split)
     path lib_struct_dir // Directory containing the library structure definition (barcode lists are loaded from here)
     val lib_struct_name // Filename of the library structure definition .json
     tuple val(meta), path(read1, stageAs: 'fastq/R1/*'), path(read2, stageAs: 'fastq/R2/*'), path(index1, stageAs: 'fastq/I1/*'), path(index2, stageAs: 'fastq/I2/*')
@@ -29,7 +29,10 @@ process BC_PARSER {
     def links = reads.collect { read, fq -> "ln -s ${fq} ${name}_${read}_001.fastq.gz" }.join("\n    ")
     def files = reads.collect { read, _fq -> "${name}_${read}_001.fastq.gz" }.join(" ")
     """
+    cat <<'END_OF_SAMPLES' > samples.csv
+${samples_csv.trim()}
+END_OF_SAMPLES
     ${links}
-    bc_parser -v --write-fastq --demux ${samples_csv} --lib-name ${meta.lib} --reads ${files} --lib-struct ${lib_struct_dir}/${lib_struct_name} --out ${prefix} --fastq-num ${meta.fastq_num} --write_barcode_sequence
+    bc_parser -v --write-fastq --demux samples.csv --lib-name ${meta.lib} --reads ${files} --lib-struct ${lib_struct_dir}/${lib_struct_name} --out ${prefix} --fastq-num ${meta.fastq_num} --write_barcode_sequence
     """
 }

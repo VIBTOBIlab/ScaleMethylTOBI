@@ -1,4 +1,4 @@
-// Combine per-cell metrics of the same sample from multiple previous runs (--merged)
+// Combine per-cell metrics of the same sample from multiple previous runs (--merge_runs)
 process COMBINE_BARCODE_CSVS {
     tag "${meta.id}"
     label 'process_single'

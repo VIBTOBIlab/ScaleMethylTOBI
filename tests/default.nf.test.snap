@@ -446,9 +446,6 @@
                 "MULTIQC": {
                     "multiqc": 1.14
                 },
-                "REGULARIZE_SAMPLES_CSV": {
-                    "python": "3.10.12"
-                },
                 "SC_DEDUP": {
                     "samtools": 1.21,
                     "sc_dedup": "0.5.0"
@@ -461,7 +458,7 @@
                 }
             }
         ],
-        "timestamp": "2026-11-17T19:42:07.326747",
+        "timestamp": "2026-11-17T21:14:32.107573",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.10.6"

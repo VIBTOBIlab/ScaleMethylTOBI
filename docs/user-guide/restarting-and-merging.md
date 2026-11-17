@@ -13,12 +13,12 @@ Besides a full run from sequencing data, the workflow has entry points that reus
 
 `--start_post_extraction true` restarts after the deduplication and methylation extraction steps, before matrix generation. Use it to change the genome bins or to add outputs such as ALLC or Amethyst files without re-aligning.
 
-Requirements: the previous run must have completed methylation extraction (`MET_EXTRACT`) and cell calling (`GENERATE_METRICS`), and kept the per-well methylation calls (`parquet_out: true`, the default). Point `--previous_outdir` at the previous output folder and use a new `--outdir`.
+Requirements: the previous run must have completed methylation extraction (`MET_EXTRACT`) and cell calling (`GENERATE_METRICS`), and kept the per-well methylation calls (`save_parquet: true`, the default). Point `--previous_outdir` at the previous output folder and use a new `--outdir`.
 
 ```bash
 nextflow run /PATH/TO/ScaleMethyl -profile docker -params-file runParams.yml \
     --start_post_extraction true --previous_outdir ScaleMethyl.out \
-    --outdir ScaleMethyl.rerun --amethyst_out true
+    --outdir ScaleMethyl.rerun
 ```
 
 ## Reporting only
@@ -43,7 +43,7 @@ These reports do not include the read and barcode statistics of the original run
 
 For large experiments (e.g. a ScaleBio large kit) each plate can be analysed in a separate run, then combined:
 
-1. Run the workflow on each plate's fastq files without matrix generation: `--window_matrix_out false --cov_out false --amethyst_out false --allc_out false`.
+1. Run the workflow on each plate's fastq files without matrix generation: `--skip_window_matrix --skip_cov --skip_amethyst --skip_allc`.
 2. Write a merge sample table with a `resultDir` column pointing to the output folder of each run. A sample that is present in several runs is listed once per run with the same name ([samples_merge.csv](../examples/samples_merge.csv)):
 
    ```csv
@@ -52,7 +52,7 @@ For large experiments (e.g. a ScaleBio large kit) each plate can be analysed in 
    PBMC-S1,1E01-1H12;2E01-2H12;3E01-3H12,ScaleMethyl,output2
    ```
 
-3. Run with `--start_post_extraction true --merged true` (or `--reporting_only true --merged true` for combined reports only). Do not combine `merged` with `previous_outdir`.
+3. Run with `--start_post_extraction true --merge_runs true` (or `--reporting_only true --merge_runs true` for combined reports only). Do not combine `merge_runs` with `previous_outdir`.
 
 This combines the metrics and reports and generates the matrices for the merged samples. It assumes the runs contain different cells (different barcodes); runs whose cells can carry identical barcodes, such as sciMETv3 PCR libraries made with the same primers, should instead be kept separate and combined afterwards with unique cell names ([Combining libraries](../scimetv3/combining-libraries.md)).
 
@@ -65,6 +65,6 @@ The workflow can also start from the aligned BAM files of two previous runs, e.g
 | `bam1_dir`      | BAM folder of the first run, e.g. `outdir_run1/alignments/bam`          |
 | `bam2_dir`      | BAM folder of the second run                                            |
 | `input`         | The sample table used for the original runs (same samples and barcodes) |
-| `bam_merge_out` | Publish the merged BAM files to `outdir/bamMerge/` (default `false`)    |
+| `save_merged_bam` | Publish the merged BAM files to `outdir/bamMerge/` (default `false`)    |
 
-The previous runs must have published their BAM files (`bam_out: true`). The files are expected in the layout written by a previous run, one per sample and Tn5 well: `<bamDir>/<sample>.<tn5 well>/<sample>.<tn5 well>.bam`. Trimming and alignment statistics are not available in the reports of a run started from BAM files.
+The previous runs must have published their BAM files (`save_bam: true`). The files are expected in the layout written by a previous run, one per sample and Tn5 well: `<bamDir>/<sample>.<tn5 well>/<sample>.<tn5 well>.bam`. Trimming and alignment statistics are not available in the reports of a run started from BAM files.

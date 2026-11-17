@@ -1,5 +1,8 @@
 //
-// Generate the html QC reports per sample and per library
+// QC reports (html):
+//   1. Sample report: cells, reads, methylation, TSS enrichment, clustering of the cells (with the
+//      CG matrix)
+//   2. Library report: all samples of a library
 //
 
 include { GENERATE_SAMPLE_REPORT } from '../../../modules/local/generate_sample_report'
@@ -21,6 +24,9 @@ workflow REPORTING {
     with_matrix            // boolean: the CG matrix is available (used to cluster cells in the report)
 
     main:
+    //
+    // 1. Sample reports
+    //
     def ch_sample_report_input = ch_report_input
         .join(ch_passing_cell_stats)
         .join(ch_csv_folder)
@@ -37,6 +43,9 @@ workflow REPORTING {
         workflow.manifest.version
     )
 
+    //
+    // 2. Library reports
+    //
     COMBINED_SAMPLE_REPORT(
         ch_library_stats.join(ch_combined_csv),
         lib_json.getParent(),

@@ -1,6 +1,9 @@
 //
-// Load the outputs of previous runs to regenerate reports (--reporting_only) or to restart
-// after methylation extraction (--start_post_extraction), optionally merging several runs (--merged)
+// Load the outputs of previous runs:
+//   1. Per-sample metrics, from --previous_outdir, or combined from the runs in the resultDir
+//      column of the samplesheet (--merge_runs)
+//   2. With --start_post_extraction: the cell metadata and the methylation calls per Tn5 well,
+//      to regenerate the matrices and coverage files
 //
 
 include { COMBINE_BARCODE_CSVS } from '../../../modules/local/combine_barcode_csvs'
@@ -9,15 +12,18 @@ include { COMBINE_SUMMARY_CSVS } from '../../../modules/local/combine_summary_cs
 workflow LOAD_PREVIOUS_RESULTS {
 
     take:
-    ch_samples // channel: [ map ] rows of the regularized samples.csv
+    ch_samples // channel: [ map ] one per sample, from the samplesheet
 
     main:
+    //
+    // 1. Per-sample metrics
+    //
     def ch_metric_input = channel.empty()
     def ch_fragment_hist = channel.empty()
     def ch_dedup_stats = channel.empty()
     def ch_tss_enrich = channel.empty()
 
-    if (params.merged) {
+    if (params.merge_runs) {
         // Merge the metrics of the runs listed in the resultDir column of samples.csv
         // [ sample, threshold, [ cellInfo ], [ cell_stats ], [ tss_enrich ] ]
         def ch_cell_infos = ch_samples
@@ -65,7 +71,7 @@ workflow LOAD_PREVIOUS_RESULTS {
         ch_tss_enrich = ch_samples.map { row -> [[id: row.sample], file("${dir}/${row.sample}.tss_enrich.csv")] }
     }
 
-    // The original run may have been run with --run_tss_enrich false
+    // The original run may have been run with --skip_tss_enrich
     ch_tss_enrich = ch_tss_enrich.map { meta, tss -> [meta, tss.exists() ? tss : []] }
 
     // bc_parser metrics may be missing from the previous output directory (e.g. when starting from BAM files):
@@ -73,7 +79,7 @@ workflow LOAD_PREVIOUS_RESULTS {
     def ch_demux_metrics = ch_samples.map { row -> [[id: row.libName], []] }.unique()
 
     //
-    // Restart after methylation extraction: load the cell metadata and the methylation calls
+    // 2. Restart after methylation extraction: load the cell metadata and the methylation calls
     //
     def ch_all_cells = channel.empty()
     def ch_met_cg = channel.empty()
@@ -83,8 +89,8 @@ workflow LOAD_PREVIOUS_RESULTS {
         def ch_result_dirs = params.previous_outdir
             ? ch_samples.map { row -> [row.sample, params.previous_outdir] }
             : ch_samples.map { row -> [row.sample, row.resultDir] }
-        // With --previous_outdir CH calls are only loaded with --calculate_ch
-        def contexts = (params.previous_outdir && !params.calculate_ch) ? ['CG'] : ['CG', 'CH']
+        // With --previous_outdir CH calls are not loaded with --skip_ch_context
+        def contexts = (params.previous_outdir && params.skip_ch_context) ? ['CG'] : ['CG', 'CH']
 
         // [ meta, [ allCells.csv ] ]
         ch_all_cells = ch_result_dirs
