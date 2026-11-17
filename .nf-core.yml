@@ -1,0 +1,47 @@
+repository_type: pipeline
+
+nf_core_version: 4.2.2
+
+lint:
+  files_unchanged:
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-scalemethyltobi_logo_light.png
+    - docs/images/nf-core-scalemethyltobi_logo_light.png
+    - docs/images/nf-core-scalemethyltobi_logo_dark.png
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - assets/email_template.txt
+    - docs/README.md
+    - docs/CONTRIBUTING.md
+    - assets/sendmail_template.txt
+  nextflow_config:
+    - manifest.name
+    - manifest.homePage
+  multiqc_config: false
+  files_exist:
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-scalemethyltobi_logo_light.png
+    - docs/images/nf-core-scalemethyltobi_logo_light.png
+    - docs/images/nf-core-scalemethyltobi_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
+    - assets/multiqc_config.yml
+    - conf/igenomes.config
+    - conf/igenomes_ignored.config
+
+template:
+  org: VIBTOBIlab
+  name: scalemethyltobi
+  description: ScaleBio single-cell DNA methylation analysis workflow
+  author: ScaleBio, VIBTOBIlab
+  version: 1.4.0dev
+  force: true
+  outdir: tpl_fresh
+  skip_features:
+    - igenomes
+    - multiqc
+    - fastqc
+    - gpu
+    - codespaces
+  is_nfcore: false
