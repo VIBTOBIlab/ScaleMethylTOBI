@@ -2,41 +2,41 @@
 
 The workflow starts from one of:
 
-| Parameter | Input |
-|---|---|
-| `runFolder` | An Illumina sequencer run folder (bcl files, contains `RunInfo.xml`). Fastq files are generated inside the workflow with `bcl-convert`. |
-| `fastqDir` | A folder with fastq files generated before the workflow, e.g. by a sequencing facility |
-| `bam1Dir` + `bam2Dir` | BAM files from two previous runs, see [Restarting and merging](restarting-and-merging.md#starting-from-bam-files) |
+| Parameter               | Input                                                                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `run_folder`            | An Illumina sequencer run folder (bcl files, contains `RunInfo.xml`). Fastq files are generated inside the workflow with `bcl-convert`. |
+| `fastq_dir`             | A folder with fastq files generated before the workflow, e.g. by a sequencing facility                                                  |
+| `bam1_dir` + `bam2_dir` | BAM files from two previous runs, see [Restarting and merging](restarting-and-merging.md#starting-from-bam-files)                       |
 
-Give exactly one of `runFolder` and `fastqDir`.
+Give exactly one of `run_folder` and `fastq_dir`.
 
 ## Read layout
 
 All supported libraries are read with paired-end reads plus two index reads:
 
-| Read | Content |
-|---|---|
-| Read 1 | Genomic sequence (the first 10 bases are trimmed) |
-| Index 1 (i7) | ScaleBio kit: i7 PCR barcode. sciMETv3: ligation barcode |
-| Index 2 (i5) | i5 PCR barcode |
-| Read 2 | Tn5 barcode (bases 1-8), Tn5 adapter, then genomic sequence |
+| Read         | Content                                                     |
+| ------------ | ----------------------------------------------------------- |
+| Read 1       | Genomic sequence (the first 10 bases are trimmed)           |
+| Index 1 (i7) | ScaleBio kit: i7 PCR barcode. sciMETv3: ligation barcode    |
+| Index 2 (i5) | i5 PCR barcode                                              |
+| Read 2       | Tn5 barcode (bases 1-8), Tn5 adapter, then genomic sequence |
 
 Because the barcodes are in the index reads, the index reads must be kept as fastq files (`I1`, `I2`). The exact positions, lengths and barcode lists are defined in the [library structure](../reference/library-structure.md).
 
 ## Starting from a run folder
 
-With `runFolder`, the workflow writes a bcl-convert samplesheet from `samples.csv`, the library structure and `RunInfo.xml`, and runs bcl-convert. The samplesheet:
+With `run_folder`, the workflow writes a bcl-convert samplesheet from `samples.csv`, the library structure and `RunInfo.xml`, and runs bcl-convert. The samplesheet:
 
 - lists all combinations of the index sequences (all i7 x all i5 barcodes, or the subsets given in the `libIndex` / `libIndex2` columns of `samples.csv`);
-- writes one set of fastq files per PCR well: per i5 barcode by default, per i7 barcode with `libStructure: "lib_split_on_i7.json"`;
+- writes one set of fastq files per PCR well: per i5 barcode by default, per i7 barcode with `lib_structure: "lib_split_on_i7.json"`;
 - reverse-complements Index 2 sequences when `RunInfo.xml` marks Index 2 as reverse complement (NextSeq 1000/2000, NovaSeq X);
 - sets `CreateFastqForIndexReads,1` so the index reads are written as fastq files.
 
-The generated samplesheet is saved as `outDir/fastq/samplesheet.csv`. To use your own samplesheet instead, set `fastqSamplesheet`. Extra bcl-convert options go in `bclConvertParams` (default `--no-lane-splitting true`).
+The generated samplesheet is saved as `outdir/fastq/samplesheet.csv`. To use your own samplesheet instead, set `fastq_samplesheet`. Extra bcl-convert options go in `bcl_convert_params` (default `--no-lane-splitting true`).
 
 ## Starting from fastq files
 
-Set `fastqDir` to the folder with the fastq files. Requirements:
+Set `fastq_dir` to the folder with the fastq files. Requirements:
 
 - **File names** follow `<libName>_..._<Read>_...fastq.gz`, where `<libName>` matches the `libName` column of [samples.csv](samples-csv.md) and `<Read>` is `R1`, `R2`, `I1` or `I2`. Everything before the first `_` is taken as the library name, so a `libName` cannot contain `_`.
 - **Index reads**: `I1` and `I2` files must be present and contain the sequenced index bases at full length (not masked or shortened).
@@ -56,7 +56,7 @@ for r in R1 R2 I1 I2; do
 done
 ```
 
-and use `fastqDir: /full/path/to/fastq_links`. With Singularity, the folder the links point to must be visible inside the container.
+and use `fastq_dir: /full/path/to/fastq_links`. With Singularity, the folder the links point to must be visible inside the container.
 
 ### Large fastq files
 
@@ -68,7 +68,7 @@ for r in R1 R2 I1 I2; do
 done
 ```
 
-All four files have the same read order, so the chunks stay in sync, and the chunk names (`myLib_S1_L001_R1_001.part_001.fastq.gz`, ...) are grouped correctly. Point `fastqDir` at `chunks/`.
+All four files have the same read order, so the chunks stay in sync, and the chunk names (`myLib_S1_L001_R1_001.part_001.fastq.gz`, ...) are grouped correctly. Point `fastq_dir` at `chunks/`.
 
 ### PhiX and other reads without barcodes
 
@@ -83,11 +83,11 @@ When the library is sequenced together with other libraries, the fastq files are
 
 Example samplesheets for the ScaleBio kit are in `docs/examples/samplesheets/`:
 
-| File | Use |
-|---|---|
+| File                                                                                                                  | Use                                       |
+| --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | [ScaleMethyl_small-kit_samplesheet_i5-FWD.csv](../examples/samplesheets/ScaleMethyl_small-kit_samplesheet_i5-FWD.csv) | Small kit; Index 2 in forward orientation |
-| [ScaleMethyl_small-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_small-kit_samplesheet_i5-REV.csv) | Small kit; Index 2 reverse complemented |
-| [ScaleMethyl_large-kit_samplesheet_i5-FWD.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-FWD.csv) | Large kit (8 plates); forward |
-| [ScaleMethyl_large-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-REV.csv) | Large kit; reverse complement |
+| [ScaleMethyl_small-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_small-kit_samplesheet_i5-REV.csv) | Small kit; Index 2 reverse complemented   |
+| [ScaleMethyl_large-kit_samplesheet_i5-FWD.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-FWD.csv) | Large kit (8 plates); forward             |
+| [ScaleMethyl_large-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-REV.csv) | Large kit; reverse complement             |
 
 These write one set of fastq files per PCR well (not per sample). Use the `REV` version on [instruments](https://knowledge.illumina.com/software/general/software-general-reference_material-list/000001800) that need Index 2 in the opposite orientation. For sciMETv3 samplesheets see [Running sciMETv3](../scimetv3/running.md#bcl-convert-samplesheet).

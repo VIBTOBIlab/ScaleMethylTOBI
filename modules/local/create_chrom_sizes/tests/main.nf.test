@@ -1,0 +1,26 @@
+nextflow_process {
+
+    name "Test Process CREATE_CHROM_SIZES"
+    script "../main.nf"
+    process "CREATE_CHROM_SIZES"
+    tag "modules"
+    tag "modules_local"
+    tag "create_chrom_sizes"
+
+    test("Chromosome sizes from fasta") {
+        when {
+            process {
+                """
+                input[0] = file("${projectDir}/tests/data/genome/genome.fa")
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() },
+                { assert path(process.out.chrom_sizes[0]).readLines() == ["chr1\t40000", "chr2\t30000", "chrM\t2000"] }
+            )
+        }
+    }
+}

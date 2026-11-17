@@ -1,0 +1,62 @@
+nextflow_pipeline {
+
+    name "Pipeline on the synthetic test dataset"
+    script "../main.nf"
+    tag "pipeline"
+
+    test("-profile test") {
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+        then {
+            def outDir = new File(outputDir)
+            def relPath = { File f -> outDir.toPath().relativize(f.toPath()).toString() }
+            def allFiles = []
+            outDir.eachFileRecurse(groovy.io.FileType.FILES) { allFiles << it }
+            // Execution reports, parameters and software versions change with every run
+            allFiles = allFiles.findAll { !relPath(it).startsWith("pipeline_info/") }
+            allFiles = allFiles.sort { relPath(it) }
+
+            // Files whose content is not reproducible (timestamps, paths, binary
+            // formats with embedded metadata): only their presence is checked
+            def unstable = ~/.*(\.html|\.png|\.parquet|\.h5|\.tbi|workflow_info\.json)$/
+
+            // Cells are written in a different order on each run, so text and
+            // gzipped outputs are compared by the md5 of their sorted lines
+            // (gzip headers also carry timestamps, so the decompressed lines are used)
+            def sortedMd5 = { List<String> lines -> lines.sort().join("\n").md5() }
+            def textFiles = allFiles.findAll { !(relPath(it) ==~ unstable) && !it.name.endsWith(".gz") }
+            def gzFiles = allFiles.findAll { it.name.endsWith(".gz") && !it.name.endsWith(".mtx.gz") }
+            // Matrix Market column indices follow the cell order: check the
+            // header line (rows, columns, entries) only
+            def mtxFiles = allFiles.findAll { it.name.endsWith(".mtx.gz") }
+
+            assertAll(
+                { assert workflow.success },
+                // Software versions (pipeline_info/*_software_versions.yml) without the Nextflow version,
+                // as the tests run on multiple Nextflow versions
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/scalemethyltobi_software_versions.yml")
+                ).match("software_versions") },
+                { assert snapshot(
+                    // Every published file, by relative path
+                    allFiles.collect { relPath(it) },
+                    // Content of the reproducible files
+                    textFiles.collectEntries {
+                        def lines = path(it.path).readLines()
+                        // Cluster labels of the random synthetic cells depend on
+                        // the cell order: compare the cell IDs only
+                        if (it.name.endsWith(".report_clusters.tsv")) {
+                            lines = lines.collect { line -> line.split("\t")[0] }
+                        }
+                        [(relPath(it)): sortedMd5(lines)]
+                    },
+                    gzFiles.collectEntries { [(relPath(it)): sortedMd5(path(it.path).linesGzip)] },
+                    mtxFiles.collectEntries { [(relPath(it)): path(it.path).linesGzip.find { !it.startsWith("%") }] }
+                ).match() }
+            )
+        }
+    }
+}

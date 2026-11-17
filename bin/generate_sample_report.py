@@ -26,7 +26,7 @@ def accept_args() -> argparse.Namespace:
         help="Path to library structure json file",
     )
     parser.add_argument("--all_cells", type=Path, help="Path to all_cells csv file")
-    parser.add_argument("--mapping_stats", type=Path, help="Path to concatenated bsbolt log file")
+    parser.add_argument("--mapping_stats", type=Path, help="Path to the mapping stats csv (from samtools flagstat of the bwa-meth alignments)")
     parser.add_argument("--trimming_stats", type=Path, help="Path to concatenated trim_galore log file")
     parser.add_argument("--fragment_hist", type=Path, help="Path to concatenated fragment_hist.tsv file")
     parser.add_argument("--dedup_stats", type=Path, help="Path to concatenated dedup_stats.tsv file")

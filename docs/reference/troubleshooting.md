@@ -30,7 +30,7 @@
 ## Containers and HPC
 
 **File not found inside the container, for inputs given as symbolic links**
-: Singularity must be able to see the folder the links point to. Add it to the bind paths in your config, e.g. `singularity.runOptions = '... -B /path/to/original/fastq'` (keep the options already set in `nextflow.config`).
+: Singularity must be able to see the folder the links point to. Add it to the bind paths in your config, e.g. `singularity.runOptions = '... -B /path/to/original/fastq'` (keep the options already set by the `singularity` profile in `nextflow.config`).
 
 **`INFO: Environment variable SINGULARITYENV_... is set, but APPTAINERENV_... is preferred`**
 : Harmless message from Apptainer.

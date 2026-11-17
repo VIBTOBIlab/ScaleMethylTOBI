@@ -8,11 +8,11 @@ The workflow keeps them apart by writing every output per sample (`allCells.csv`
 
 `references/sciMETv3/rename_amethyst_cells.py` adds a prefix to the cell names in the `samples/` folder of a run, consistently across:
 
-| File | Change |
-|---|---|
+| File                                                            | Change                                                                                                   |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `methylation_coverage/amethyst/<sample>/<sample>.<well>_cov.h5` | Groups `/CG/<barcode>` and `/CH/<barcode>` renamed to `/CG/<prefix>_<barcode>`, `/CH/<prefix>_<barcode>` |
-| `<sample>.allCells.csv` | `cell_id` prefixed |
-| `genome_bin_matrix/<sample>.barcodes.tsv` | Barcodes prefixed |
+| `<sample>.allCells.csv`                                         | `cell_id` prefixed                                                                                       |
+| `genome_bin_matrix/<sample>.barcodes.tsv`                       | Barcodes prefixed                                                                                        |
 
 It needs Python 3 with `h5py` (on an HPC e.g. `module load h5py`).
 
@@ -32,7 +32,7 @@ python $SCRIPT ScaleMethyl.out/samples --inplace
 It prints one line per sample with the number of files and cells and the prefix used. Names that already carry the prefix are left unchanged, so running it twice is safe.
 
 - **Copy mode** (default) writes renamed `.h5` and `allCells.csv` files to the new folder and links the matrix files of `genome_bin_matrix/` into it (only `barcodes.tsv` is rewritten). The new folder can be loaded directly with Amethyst. The `.h5` copies need as much disk space as the originals; check with `du -sh samples/methylation_coverage/amethyst`.
-- **In-place mode** also rewrites the workflow's own `allCells.csv`. If you later rerun part of the workflow on that output folder (e.g. `startPostExtraction`), the renamed cells no longer match the workflow's intermediate files. Prefer copy mode when in doubt.
+- **In-place mode** also rewrites the workflow's own `allCells.csv`. If you later rerun part of the workflow on that output folder (e.g. `start_post_extraction`), the renamed cells no longer match the workflow's intermediate files. Prefer copy mode when in doubt.
 
 !!! note "Older Amethyst files"
     In this version of the workflow each cell is a group (`/CG/<barcode>/1`). Scripts written for the older layout, where each cell was a dataset (`/CG/<barcode>`), rename the dataset `1` instead of the cell and break the files.

@@ -1,0 +1,37 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/VIBTOBIlab/scalemethyltobi/main/assets/schema_input.json",
+    "title": "VIBTOBIlab/scalemethyltobi pipeline - params.input schema",
+    "description": "Schema for samples.csv provided with params.input",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]+$",
+                "errorMessage": "Sample name must be provided and can only contain letters, digits and dashes"
+            },
+            "barcodes": {
+                "type": "string",
+                "pattern": "^[0-9A-Za-z;\\- ]*$",
+                "errorMessage": "Barcodes must be well coordinates or ranges separated by ';', e.g. 1A01-1H12;2A01-2H12"
+            },
+            "libName": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]+$",
+                "errorMessage": "Library name can only contain letters, digits and dashes"
+            },
+            "threshold": {
+                "type": "integer",
+                "minimum": 0,
+                "errorMessage": "Threshold must be a positive integer (unique reads per cell)"
+            },
+            "resultDir": {
+                "type": "string",
+                "errorMessage": "Output directory of a previous run (used with --merged)"
+            }
+        },
+        "required": ["sample"]
+    }
+}

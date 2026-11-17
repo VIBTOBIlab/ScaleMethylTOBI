@@ -3,10 +3,10 @@
 ## Requirements
 
 - Linux system with GLIBC >= 2.17 (for example CentOS 7 or later)
-- Java 11 or later
-- [Nextflow](https://www.nextflow.io) 23.10 or later
+- Java 17 or later
+- [Nextflow](https://www.nextflow.io) 25.10.4 or later
 - 64 GB of RAM and 12 CPU cores. For large datasets a distributed compute system (HPC or cloud) is strongly recommended.
-- Working storage of about 5x the input data size, e.g. about 4 TB of temporary storage for deep sequencing of a ScaleBio *small kit*.
+- Working storage of about 5x the input data size, e.g. about 4 TB of temporary storage for deep sequencing of a ScaleBio _small kit_.
 
 ## Get the workflow
 
@@ -20,17 +20,16 @@ The workflow needs a number of tools: ScaleBio executables, open-source software
 
 Pre-built containers include every dependency, and the workflow uses them automatically:
 
-| Profile | Use |
-|---|---|
-| `-profile docker` | Systems with Docker |
-| `-profile dockerGPU` | Docker with GPU access, required for the Parabricks aligner |
-| `-profile singularity` | Systems with Singularity / Apptainer (2.3.x or newer), common on HPC clusters |
+| Profile                                       | Use                                                          |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| `-profile docker`                             | Systems with Docker                                          |
+| `-profile singularity` / `-profile apptainer` | Systems with Singularity / Apptainer, common on HPC clusters |
 
 For Singularity:
 
 - `NXF_SINGULARITY_CACHEDIR` controls where images are stored. It should be writable and available on all compute nodes.
 - Set `TMPDIR` to a location that is writable from the container if `/tmp` is not.
-- All input and output paths must be visible inside the container. Nextflow handles this for Docker; for Singularity, *user mounts* must be enabled in the system-wide configuration. Paths reached through symbolic links must also be visible, so add their target folders to the bind paths if needed (see [Troubleshooting](../reference/troubleshooting.md)).
+- All input and output paths must be visible inside the container. Nextflow handles this for Docker; for Singularity, _user mounts_ must be enabled in the system-wide configuration. Paths reached through symbolic links must also be visible, so add their target folders to the bind paths if needed (see [Troubleshooting](../reference/troubleshooting.md)).
 
 See [Nextflow containers](https://www.nextflow.io/docs/latest/container.html) for more options.
 

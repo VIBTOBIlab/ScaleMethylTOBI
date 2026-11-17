@@ -29,7 +29,7 @@ def write_amethyst(met_cg: list[Path], met_ch: list[Path], barcodes: list, sampl
         if met_ch != []:
             mets_list.append(met_ch)
             context_groups.append(f.create_group("CH"))
-        
+
         for bc in barcodes:
             for group, files in zip(context_groups, mets_list):
                 file_names = [file.name for file in files]

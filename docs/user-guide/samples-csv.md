@@ -12,15 +12,15 @@ PBMC-S2,2E01-3H12,ScaleMethyl
 
 The first column must be `sample`; all others are optional. Column names are case-sensitive.
 
-| Column | Description | Example | Default |
-|---|---|---|---|
-| `sample` | Sample name | `Foobar-2` | |
-| `barcodes` | Tn5 wells used for this sample | `1A01-1H12;2A01-2D12` | all wells in the Tn5 barcode list (`1A01-3H12`) |
-| `libName` | Name of the sequencing library / fastq files | `ScaleMethyl` | `ScaleMethyl` |
-| `libIndex` | Subset of Index 1 (i7) sequences used, separated by `;` | `TTGATATGAA;CCTAAGCGGT` | all sequences in the i7 list |
-| `libIndex2` | Subset of Index 2 (i5) sequences used, separated by `;` | `TATCATGATC;GAGCATATGG` | all sequences in the i5 list |
-| `threshold` | Unique reads above which a barcode is called a cell | `1000` | calculated, see [cell calling](parameters.md#cell-calling) |
-| `split` | Split this sample by Tn5 well for parallel processing | `true` | value of `splitFastq` |
+| Column      | Description                                             | Example                 | Default                                                    |
+| ----------- | ------------------------------------------------------- | ----------------------- | ---------------------------------------------------------- |
+| `sample`    | Sample name                                             | `Foobar-2`              |                                                            |
+| `barcodes`  | Tn5 wells used for this sample                          | `1A01-1H12;2A01-2D12`   | all wells in the Tn5 barcode list (`1A01-3H12`)            |
+| `libName`   | Name of the sequencing library / fastq files            | `ScaleMethyl`           | `ScaleMethyl`                                              |
+| `libIndex`  | Subset of Index 1 (i7) sequences used, separated by `;` | `TTGATATGAA;CCTAAGCGGT` | all sequences in the i7 list                               |
+| `libIndex2` | Subset of Index 2 (i5) sequences used, separated by `;` | `TATCATGATC;GAGCATATGG` | all sequences in the i5 list                               |
+| `threshold` | Unique reads above which a barcode is called a cell     | `1000`                  | calculated, see [cell calling](parameters.md#cell-calling) |
+| `split`     | Split this sample by Tn5 well for parallel processing   | `true`                  | value of `split_fastq`                                     |
 
 - `sample` and `libName` may contain only letters, numbers and dashes (`-`), and should start with a letter.
 - `libIndex` / `libIndex2` are only used to build the bcl-convert samplesheet when starting from a run folder. Give the sequences as they appear in the barcode lists of the library structure.
@@ -59,10 +59,10 @@ During analysis, reads are first assigned to libraries (fastq files) and then to
 
 ### Examples
 
-| sample | barcodes | Meaning |
-|---|---|---|
-| One | `1A01-2D12` | Tn5 plate 1 and the first half of plate 2, row-wise |
-| Two | `2E01-2H12` | Second half of plate 2, from row E |
-| Three | `3A01-3A06;3B01-3B06;3C01-3C06;3D01-3D06;3E01-3E06;3F01-3F06;3G01-3G06;3H01-3H06` | Plate 3, columns 1-6 |
-| Four | `3A07-3A12;3B07-3B12;3C07-3C12;3D07-3D12;3E07-3E12;3F07-3F12;3G07-3G12;3H07-3H12` | Plate 3, columns 7-12 |
-| Five | `1A05;1B05;1C05;1D05;1E05;1F05;1G05` | Plate 1, column 5, rows A-G |
+| sample | barcodes                                                                          | Meaning                                             |
+| ------ | --------------------------------------------------------------------------------- | --------------------------------------------------- |
+| One    | `1A01-2D12`                                                                       | Tn5 plate 1 and the first half of plate 2, row-wise |
+| Two    | `2E01-2H12`                                                                       | Second half of plate 2, from row E                  |
+| Three  | `3A01-3A06;3B01-3B06;3C01-3C06;3D01-3D06;3E01-3E06;3F01-3F06;3G01-3G06;3H01-3H06` | Plate 3, columns 1-6                                |
+| Four   | `3A07-3A12;3B07-3B12;3C07-3C12;3D07-3D12;3E07-3E12;3F07-3F12;3G07-3G12;3H07-3H12` | Plate 3, columns 7-12                               |
+| Five   | `1A05;1B05;1C05;1D05;1E05;1F05;1G05`                                              | Plate 1, column 5, rows A-G                         |

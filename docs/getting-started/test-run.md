@@ -1,11 +1,23 @@
 # Test run
 
+## Built-in test profile
+
+The repository contains a tiny synthetic dataset (`tests/data/`, 12 cells in two samples). The `test` profile runs the whole workflow on it in a few minutes, without downloading anything:
+
+```bash
+nextflow run /PATH/TO/ScaleMethyl -profile test,docker --outdir test_results
+```
+
+The same run is the pipeline test of the repository (`nf-test test --profile +docker`, see `tests/README.md`).
+
+## PBMC example data
+
 A small test dataset (downsampled PBMCs, ScaleBio kit v1.1) is stored online. Use it to check that the workflow and its dependencies work on your system:
 
 ```bash
 nextflow run /PATH/TO/ScaleMethyl -profile docker \
     -params-file /PATH/TO/ScaleMethyl/docs/examples/runParams.yml \
-    --outDir ScaleMethyl.out
+    --outdir ScaleMethyl.out
 ```
 
 Replace `docker` with the profile for your system (see [Installation](installation.md)). Nextflow downloads the example data from AWS S3, so the compute nodes need internet access and some storage space.
@@ -22,7 +34,7 @@ and run with the local copies:
 ```bash
 nextflow run /PATH/TO/ScaleMethyl -profile docker \
     -params-file /PATH/TO/ScaleMethyl/docs/examples/runParams.yml \
-    --genome reference/genome.json --fastqDir fastqs --outDir ScaleMethyl.out
+    --genome reference/genome.json --fastq_dir fastqs --outdir ScaleMethyl.out
 ```
 
 The test only checks that the workflow runs; it is not a complete dataset.

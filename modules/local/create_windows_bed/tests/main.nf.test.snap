@@ -1,0 +1,33 @@
+{
+    "10 kb CG bins without blacklist": {
+        "content": [
+            {
+                "0": [
+                    "genome_tiles_CG.bed:md5,21d3b2790afd7efbdae9ff8be7c85c22"
+                ],
+                "1": [
+                    [
+                        "CREATE_WINDOWS_BED",
+                        "python",
+                        "3.10.12"
+                    ]
+                ],
+                "bed": [
+                    "genome_tiles_CG.bed:md5,21d3b2790afd7efbdae9ff8be7c85c22"
+                ],
+                "versions_python": [
+                    [
+                        "CREATE_WINDOWS_BED",
+                        "python",
+                        "3.10.12"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-17T15:25:47.813685",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.6"
+        }
+    }
+}

@@ -1,2 +1,22 @@
-site/
+# nf-core pipeline template .gitignore
+.nextflow*
+work/
+data/
+results/
 .DS_Store
+testing/
+testing*
+*.pyc
+null/
+.lineage/
+.nf-test/
+.nf-test.log
+
+# Test input data is committed (the data/ rule above would otherwise skip it)
+!tests/data/
+
+# Default output directory of this workflow
+ScaleMethyl.out/
+
+# MkDocs build output
+site/

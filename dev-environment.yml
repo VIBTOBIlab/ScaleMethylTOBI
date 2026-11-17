@@ -1,0 +1,13 @@
+# Development tools for ScaleMethyl (pipeline template, linting, tests).
+# conda env create -f dev-environment.yml && conda activate scalemethyl-dev
+name: scalemethyl-dev
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - nextflow=26.10.6
+  - nf-core=4.2.2
+  - nf-test=0.9.5
+  - pre-commit=4.7.0
+  - openjdk=21

@@ -1,0 +1,304 @@
+{
+    "@context": [
+        "https://w3id.org/ro/crate/1.3/context",
+        "https://w3id.org/ro/terms/test"
+    ],
+    "@graph": [
+        {
+            "@id": "./",
+            "@type": "Dataset",
+            "conformsTo": [
+                {
+                    "@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.1"
+                },
+                {
+                    "@id": "https://w3id.org/ro/wftest/0.2"
+                }
+            ],
+            "creativeWorkStatus": "InProgress",
+            "datePublished": "2026-11-17T14:03:42+00:00",
+            "description": "# VIBTOBIlab/scalemethyltobi\n\n[![GitHub Actions CI Status](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/nf-test.yml/badge.svg)](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/nf-test.yml)\n[![GitHub Actions Linting Status](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/linting.yml/badge.svg)](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/linting.yml)\n[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)\n\n[![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.10.4-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)\n[![nf-core template version](https://img.shields.io/badge/nf--core_template-4.2.2-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/4.2.2)\n[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)\n[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)\n[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)\n\n## Introduction\n\n**VIBTOBIlab/scalemethyltobi** is a Nextflow pipeline for single-cell DNA methylation libraries made by combinatorial indexing (ScaleBio Single Cell Methylation kits and sciMETv3). It takes sequencing reads to alignments, per-cell methylation calls (Bismark `.cov`, ALLC, Amethyst `.h5`), genome-bin matrices and QC reports.\n\nThis repository is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at https://github.com/ScaleBio/ScaleMethyl. It adds library structures and helper scripts for **sciMETv3** libraries (Nichols et al. 2025, _Cell Genomics_ 5:100726), a fix for alignment against shared bwa-meth indexes, restructured documentation, and the structure, tests and CI of the [nf-core](https://nf-co.re) pipeline template.\n\n1. Fastq generation from a sequencer run folder ([`bcl-convert`](https://support.illumina.com/sequencing/sequencing_software/bcl-convert.html), optional)\n2. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))\n3. Barcode demultiplexing by sample and Tn5 well with error correction (`bc_parser`)\n4. Adapter trimming ([`cutadapt`](https://cutadapt.readthedocs.io))\n5. Alignment ([`bwa-meth`](https://github.com/brentp/bwa-meth) with bwa-mem2)\n6. Deduplication per cell barcode (`sc_dedup`)\n7. Methylation extraction: per-cell CG and CH methylation calls\n8. Cell calling, TSS enrichment and HTML QC reports per sample and per library\n9. Per-cell coverage files (Bismark `.cov`, ALLC, Amethyst `.h5`) and genome-bin methylation matrices\n\n## Supported libraries\n\n| Library                                          | `--lib_structure`        |\n| ------------------------------------------------ | ------------------------ |\n| ScaleBio Single Cell Methylation kit v1.0 / v1.1 | `lib.json` (default)     |\n| ScaleBio alpha kit                               | `prev_pcr/lib.json`      |\n| sciMETv3 with the paper's i5 primers             | `sciMETv3/lib.json`      |\n| sciMETv3 with TruSeq HT D501-D508 i5 primers     | `sciMETv3/lib_D50x.json` |\n\n## Usage\n\n> [!NOTE]\n> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to test your setup with `-profile test` before running the workflow on actual data:\n>\n> ```bash\n> nextflow run VIBTOBIlab/scalemethyltobi -profile test,docker --outdir test_results\n> ```\n\nFirst, prepare a sample table with the samples of your libraries:\n\n`samples.csv`:\n\n```csv\nsample,barcodes,libName\nPBMC-S1,1A01-2D12,ScaleMethyl\nPBMC-S2,2E01-3H12,ScaleMethyl\n```\n\nEach row is a sample: its name, its Tn5 barcode wells and the library (fastq file prefix) it was sequenced in. See the [sample table](docs/user-guide/samples-csv.md) documentation.\n\nNow, you can run the pipeline using:\n\n```bash\nnextflow run VIBTOBIlab/scalemethyltobi \\\n   -profile <docker/singularity/.../institute> \\\n   --input samples.csv \\\n   --genome /path/to/genome.json \\\n   --fastq_dir /path/to/fastqs \\\n   --outdir <OUTDIR>\n```\n\nUse `--run_folder` instead of `--fastq_dir` to start from an Illumina run folder. `genome.json` describes the bwa-meth index and the genome annotation; see [reference genomes](docs/user-guide/reference-genomes.md).\n\n> [!WARNING]\n> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).\n\n> [!IMPORTANT]\n> Since version 1.4.0 the parameters use snake_case, as in nf-core pipelines (e.g. `--samples` is now `--input`, `--outDir` is `--outdir`, `--fastqDir` is `--fastq_dir`). bwa-meth is the only aligner. See the [changelog](CHANGELOG.md).\n\n## Documentation\n\nThe full documentation is in [docs/](docs/index.md):\n\n- [Installation](docs/getting-started/installation.md) and [test run](docs/getting-started/test-run.md)\n- [Running the workflow](docs/user-guide/running.md), [input data](docs/user-guide/input-data.md), [sample table](docs/user-guide/samples-csv.md), [reference genomes](docs/user-guide/reference-genomes.md), [parameters](docs/user-guide/parameters.md), [restarting and merging](docs/user-guide/restarting-and-merging.md)\n- [Output files](docs/outputs/output-files.md), [QC reports](docs/outputs/qc-reports.md), [barcode metrics](docs/outputs/barcode-metrics.md)\n- [sciMETv3](docs/scimetv3/index.md)\n- [Troubleshooting](docs/reference/troubleshooting.md) and [changelog](CHANGELOG.md)\n- nf-core style summaries: [usage](docs/usage.md), [output](docs/output.md)\n\nThe documentation can be built as a website with [MkDocs](https://www.mkdocs.org):\n\n```bash\npip install -r requirements-docs.txt\nmkdocs serve          # preview at http://127.0.0.1:8000\n```\n\nOn GitHub, `.github/workflows/docs.yml` builds the site for pull requests that change the docs and publishes it to GitHub Pages on every push to `main` (set _Settings > Pages > Source_ to **GitHub Actions**).\n\n## Credits\n\nVIBTOBIlab/scalemethyltobi is based on the ScaleMethyl workflow written by ScaleBio and is maintained by VIBTOBIlab.\n\n## Contributions and Support\n\nIf you would like to contribute to this pipeline, please see the [contributing guidelines](docs/CONTRIBUTING.md). The development tools are pinned in `dev-environment.yml`.\n\n## Citations\n\nAn extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.\n\nThis pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/main/LICENSE).\n\n> **The nf-core framework for community-curated bioinformatics pipelines.**\n>\n> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.\n>\n> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).\n\n## License\n\nBy purchasing product(s) and downloading the software product(s) of ScaleBio, You accept all of the terms of the [License Agreement](LICENSE.md). If You do not agree to these terms and conditions, You may not use or download any of the software product(s) of ScaleBio.\n",
+            "hasPart": [
+                {
+                    "@id": "main.nf"
+                },
+                {
+                    "@id": "assets/"
+                },
+                {
+                    "@id": "conf/"
+                },
+                {
+                    "@id": "docs/"
+                },
+                {
+                    "@id": "workflows/"
+                },
+                {
+                    "@id": "subworkflows/"
+                },
+                {
+                    "@id": "nextflow.config"
+                },
+                {
+                    "@id": "README.md"
+                },
+                {
+                    "@id": "nextflow_schema.json"
+                },
+                {
+                    "@id": "CHANGELOG.md"
+                },
+                {
+                    "@id": "LICENSE"
+                },
+                {
+                    "@id": "CITATIONS.md"
+                },
+                {
+                    "@id": "modules.json"
+                },
+                {
+                    "@id": "docs/usage.md"
+                },
+                {
+                    "@id": "docs/output.md"
+                },
+                {
+                    "@id": ".nf-core.yml"
+                },
+                {
+                    "@id": ".pre-commit-config.yaml"
+                },
+                {
+                    "@id": ".prettierignore"
+                }
+            ],
+            "isBasedOn": "https://github.com/VIBTOBIlab/scalemethyltobi",
+            "license": "MIT",
+            "mainEntity": {
+                "@id": "main.nf"
+            },
+            "mentions": [
+                {
+                    "@id": "#5a3a3b8a-dd38-4d85-af61-9834627dbf11"
+                }
+            ],
+            "name": "VIBTOBIlab/scalemethyltobi"
+        },
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "about": {
+                "@id": "./"
+            },
+            "conformsTo": {
+                "@id": "https://w3id.org/ro/crate/1.3"
+            }
+        },
+        {
+            "@id": "main.nf",
+            "@type": [
+                "File",
+                "SoftwareSourceCode",
+                "ComputationalWorkflow"
+            ],
+            "contributor": [
+                {
+                    "@id": "#1d753b7f-4f22-494a-8221-1850de1dc585"
+                },
+                {
+                    "@id": "#36d2611f-0a2c-49e1-ae48-9af6c784776b"
+                }
+            ],
+            "dateCreated": "",
+            "dateModified": "2026-11-17T15:03:42Z",
+            "dct:conformsTo": "https://bioschemas.org/profiles/ComputationalWorkflow/1.0-RELEASE/",
+            "keywords": [
+                "nf-core",
+                "nextflow"
+            ],
+            "license": [
+                "MIT"
+            ],
+            "name": [
+                "VIBTOBIlab/scalemethyltobi"
+            ],
+            "programmingLanguage": {
+                "@id": "https://w3id.org/workflowhub/workflow-ro-crate#nextflow"
+            },
+            "sdPublisher": {
+                "@id": "https://nf-co.re/"
+            },
+            "url": [
+                "https://github.com/VIBTOBIlab/scalemethyltobi",
+                "https://nf-co.re/VIBTOBIlab/scalemethyltobi/dev/"
+            ],
+            "version": [
+                "1.4.0dev"
+            ]
+        },
+        {
+            "@id": "https://w3id.org/workflowhub/workflow-ro-crate#nextflow",
+            "@type": "ComputerLanguage",
+            "identifier": {
+                "@id": "https://www.nextflow.io/"
+            },
+            "name": "Nextflow",
+            "url": {
+                "@id": "https://www.nextflow.io/"
+            },
+            "version": "!>=25.10.4"
+        },
+        {
+            "@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.1",
+            "@type": [
+                "CreativeWork",
+                "Profile"
+            ],
+            "name": "Workflow RO-Crate",
+            "version": "1.1"
+        },
+        {
+            "@id": "#5a3a3b8a-dd38-4d85-af61-9834627dbf11",
+            "@type": "TestSuite",
+            "instance": [
+                {
+                    "@id": "#53953ec4-ca3d-4312-ae45-e9354c5d3081"
+                }
+            ],
+            "mainEntity": {
+                "@id": "main.nf"
+            },
+            "name": "Test suite for VIBTOBIlab/scalemethyltobi"
+        },
+        {
+            "@id": "https://w3id.org/ro/wftest/0.2",
+            "@type": [
+                "CreativeWork",
+                "Profile"
+            ],
+            "name": "Workflow Testing RO-Crate",
+            "version": "0.2"
+        },
+        {
+            "@id": "#53953ec4-ca3d-4312-ae45-e9354c5d3081",
+            "@type": "TestInstance",
+            "name": "GitHub Actions workflow for testing VIBTOBIlab/scalemethyltobi",
+            "resource": "repos/VIBTOBIlab/scalemethyltobi/actions/workflows/nf-test.yml",
+            "runsOn": {
+                "@id": "https://w3id.org/ro/terms/test#GithubService"
+            },
+            "url": "https://api.github.com"
+        },
+        {
+            "@id": "https://w3id.org/ro/terms/test#GithubService",
+            "@type": "TestService",
+            "name": "Github Actions",
+            "url": {
+                "@id": "https://github.com"
+            }
+        },
+        {
+            "@id": "assets/",
+            "@type": "Dataset",
+            "description": "Additional files"
+        },
+        {
+            "@id": "conf/",
+            "@type": "Dataset",
+            "description": "Configuration files"
+        },
+        {
+            "@id": "docs/",
+            "@type": "Dataset",
+            "description": "Markdown files for documenting the pipeline"
+        },
+        {
+            "@id": "workflows/",
+            "@type": "Dataset",
+            "description": "Main pipeline workflows to be executed in main.nf"
+        },
+        {
+            "@id": "subworkflows/",
+            "@type": "Dataset",
+            "description": "Smaller subworkflows"
+        },
+        {
+            "@id": "nextflow.config",
+            "@type": "File",
+            "description": "Main Nextflow configuration file"
+        },
+        {
+            "@id": "README.md",
+            "@type": "File",
+            "description": "Basic pipeline usage information"
+        },
+        {
+            "@id": "nextflow_schema.json",
+            "@type": "File",
+            "description": "JSON schema for pipeline parameter specification"
+        },
+        {
+            "@id": "CHANGELOG.md",
+            "@type": "File",
+            "description": "Information on changes made to the pipeline"
+        },
+        {
+            "@id": "LICENSE",
+            "@type": "File",
+            "description": "The license - should be MIT"
+        },
+        {
+            "@id": "CITATIONS.md",
+            "@type": "File",
+            "description": "Citations needed when using the pipeline"
+        },
+        {
+            "@id": "modules.json",
+            "@type": "File",
+            "description": "Version information for modules from nf-core/modules"
+        },
+        {
+            "@id": "docs/usage.md",
+            "@type": "File",
+            "description": "Usage documentation"
+        },
+        {
+            "@id": "docs/output.md",
+            "@type": "File",
+            "description": "Output documentation"
+        },
+        {
+            "@id": ".nf-core.yml",
+            "@type": "File",
+            "description": "nf-core configuration file, configuring template features and linting rules"
+        },
+        {
+            "@id": ".pre-commit-config.yaml",
+            "@type": "File",
+            "description": "Configuration file for pre-commit hooks"
+        },
+        {
+            "@id": ".prettierignore",
+            "@type": "File",
+            "description": "Ignore file for prettier"
+        },
+        {
+            "@id": "https://nf-co.re/",
+            "@type": "Organization",
+            "name": "nf-core",
+            "url": "https://nf-co.re/"
+        },
+        {
+            "@id": "#1d753b7f-4f22-494a-8221-1850de1dc585",
+            "@type": "Person",
+            "name": "ScaleBio"
+        },
+        {
+            "@id": "#36d2611f-0a2c-49e1-ae48-9af6c784776b",
+            "@type": "Person",
+            "name": "VIBTOBIlab"
+        }
+    ]
+}

@@ -1,0 +1,53 @@
+nextflow_process {
+
+    name "Test Process BC_PARSER"
+    script "../main.nf"
+    process "BC_PARSER"
+    tag "modules"
+    tag "modules_local"
+    tag "bc_parser"
+
+    setup {
+        run("REGULARIZE_SAMPLES_CSV") {
+            script "../../regularize_samples_csv/main.nf"
+            process {
+                """
+                input[0] = file("${projectDir}/tests/data/samples.csv")
+                input[1] = "lib.json"
+                input[2] = file("${projectDir}/references")
+                """
+            }
+        }
+    }
+
+    test("Splits synthetic reads by sample and Tn5 well") {
+        when {
+            process {
+                """
+                input[0] = REGULARIZE_SAMPLES_CSV.out.csv
+                input[1] = file("${projectDir}/references")
+                input[2] = "lib.json"
+                input[3] = channel.of([
+                    "ScaleMethyl",
+                    "ScaleMethyl_S1_L001_001.fastq.gz",
+                    files("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_*_001.fastq.gz").sort(),
+                    0
+                ])
+                """
+            }
+        }
+        then {
+            def metrics = path(process.out.metrics[0][1]).json
+            assertAll(
+                { assert process.success },
+                // One R1 file per sample and Tn5 well (3 wells per sample)
+                { assert process.out.read1_fastq[0][1].size() == 6 },
+                { assert process.out.read2_fastq[0][1].size() == 6 },
+                { assert snapshot(
+                    process.out.read1_fastq[0][1].collect { file(it).name }.sort(),
+                    metrics
+                ).match() }
+            )
+        }
+    }
+}

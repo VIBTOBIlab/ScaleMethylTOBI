@@ -1,42 +1,79 @@
-# ScaleMethyl workflow (with sciMETv3 support)
+# VIBTOBIlab/scalemethyltobi
 
-A Nextflow workflow for single-cell DNA methylation libraries made by combinatorial indexing. It takes sequencing reads to alignments, per-cell methylation calls (bismark `.cov`, ALLC, Amethyst `.h5`), genome-bin matrices and QC reports.
+[![GitHub Actions CI Status](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/nf-test.yml/badge.svg)](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/nf-test.yml)
+[![GitHub Actions Linting Status](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/linting.yml/badge.svg)](https://github.com/VIBTOBIlab/ScaleMethylTOBI/actions/workflows/linting.yml)
+[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
-This repository is a copy of the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at https://github.com/ScaleBio/ScaleMethyl. It adds library structures and helper scripts for **sciMETv3** libraries (Nichols et al. 2025, *Cell Genomics* 5:100726), a fix for alignment against shared bwa-meth indexes, and restructured documentation.
+[![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.10.4-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
+[![nf-core template version](https://img.shields.io/badge/nf--core_template-4.2.2-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/4.2.2)
+[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
+[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
+
+## Introduction
+
+**VIBTOBIlab/scalemethyltobi** is a Nextflow pipeline for single-cell DNA methylation libraries made by combinatorial indexing (ScaleBio Single Cell Methylation kits and sciMETv3). It takes sequencing reads to alignments, per-cell methylation calls (Bismark `.cov`, ALLC, Amethyst `.h5`), genome-bin matrices and QC reports.
+
+This repository is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at https://github.com/ScaleBio/ScaleMethyl. It adds library structures and helper scripts for **sciMETv3** libraries (Nichols et al. 2025, _Cell Genomics_ 5:100726), a fix for alignment against shared bwa-meth indexes, restructured documentation, and the structure, tests and CI of the [nf-core](https://nf-co.re) pipeline template.
+
+1. Fastq generation from a sequencer run folder ([`bcl-convert`](https://support.illumina.com/sequencing/sequencing_software/bcl-convert.html), optional)
+2. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+3. Barcode demultiplexing by sample and Tn5 well with error correction (`bc_parser`)
+4. Adapter trimming ([`cutadapt`](https://cutadapt.readthedocs.io))
+5. Alignment ([`bwa-meth`](https://github.com/brentp/bwa-meth) with bwa-mem2)
+6. Deduplication per cell barcode (`sc_dedup`)
+7. Methylation extraction: per-cell CG and CH methylation calls
+8. Cell calling, TSS enrichment and HTML QC reports per sample and per library
+9. Per-cell coverage files (Bismark `.cov`, ALLC, Amethyst `.h5`) and genome-bin methylation matrices
 
 ## Supported libraries
 
-| Library | `libStructure` |
-|---|---|
-| ScaleBio Single Cell Methylation kit v1.0 / v1.1 | `lib.json` (default) |
-| ScaleBio alpha kit | `prev_pcr/lib.json` |
-| sciMETv3 with the paper's i5 primers | `sciMETv3/lib.json` |
-| sciMETv3 with TruSeq HT D501-D508 i5 primers | `sciMETv3/lib_D50x.json` |
+| Library                                          | `--lib_structure`        |
+| ------------------------------------------------ | ------------------------ |
+| ScaleBio Single Cell Methylation kit v1.0 / v1.1 | `lib.json` (default)     |
+| ScaleBio alpha kit                               | `prev_pcr/lib.json`      |
+| sciMETv3 with the paper's i5 primers             | `sciMETv3/lib.json`      |
+| sciMETv3 with TruSeq HT D501-D508 i5 primers     | `sciMETv3/lib_D50x.json` |
 
-## Quick start
+## Usage
 
-Requirements: Linux, Java 11+, [Nextflow](https://www.nextflow.io) 23.10+, and Docker, Singularity/Apptainer or Conda.
+> [!NOTE]
+> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to test your setup with `-profile test` before running the workflow on actual data:
+>
+> ```bash
+> nextflow run VIBTOBIlab/scalemethyltobi -profile test,docker --outdir test_results
+> ```
 
-Test run with the example data (downloaded automatically):
+First, prepare a sample table with the samples of your libraries:
+
+`samples.csv`:
+
+```csv
+sample,barcodes,libName
+PBMC-S1,1A01-2D12,ScaleMethyl
+PBMC-S2,2E01-3H12,ScaleMethyl
+```
+
+Each row is a sample: its name, its Tn5 barcode wells and the library (fastq file prefix) it was sequenced in. See the [sample table](docs/user-guide/samples-csv.md) documentation.
+
+Now, you can run the pipeline using:
 
 ```bash
-nextflow run /PATH/TO/ScaleMethyl -profile docker \
-    -params-file /PATH/TO/ScaleMethyl/docs/examples/runParams.yml --outDir ScaleMethyl.out
+nextflow run VIBTOBIlab/scalemethyltobi \
+   -profile <docker/singularity/.../institute> \
+   --input samples.csv \
+   --genome /path/to/genome.json \
+   --fastq_dir /path/to/fastqs \
+   --outdir <OUTDIR>
 ```
 
-Your own data, with a `runParams.yml` such as:
+Use `--run_folder` instead of `--fastq_dir` to start from an Illumina run folder. `genome.json` describes the bwa-meth index and the genome annotation; see [reference genomes](docs/user-guide/reference-genomes.md).
 
-```yaml
-fastqDir: /path/to/fastqs          # or runFolder: /path/to/illumina/run
-samples: samples.csv
-genome: /path/to/genome.json
-libStructure: "lib.json"
-outDir: ScaleMethyl.out
-```
+> [!WARNING]
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
-```bash
-nextflow run /PATH/TO/ScaleMethyl -profile singularity -params-file runParams.yml
-```
+> [!IMPORTANT]
+> Since version 1.4.0 the parameters use snake_case, as in nf-core pipelines (e.g. `--samples` is now `--input`, `--outDir` is `--outdir`, `--fastqDir` is `--fastq_dir`). bwa-meth is the only aligner. See the [changelog](CHANGELOG.md).
 
 ## Documentation
 
@@ -46,7 +83,8 @@ The full documentation is in [docs/](docs/index.md):
 - [Running the workflow](docs/user-guide/running.md), [input data](docs/user-guide/input-data.md), [sample table](docs/user-guide/samples-csv.md), [reference genomes](docs/user-guide/reference-genomes.md), [parameters](docs/user-guide/parameters.md), [restarting and merging](docs/user-guide/restarting-and-merging.md)
 - [Output files](docs/outputs/output-files.md), [QC reports](docs/outputs/qc-reports.md), [barcode metrics](docs/outputs/barcode-metrics.md)
 - [sciMETv3](docs/scimetv3/index.md)
-- [Troubleshooting](docs/reference/troubleshooting.md) and [changelog](changelog.md)
+- [Troubleshooting](docs/reference/troubleshooting.md) and [changelog](CHANGELOG.md)
+- nf-core style summaries: [usage](docs/usage.md), [output](docs/output.md)
 
 The documentation can be built as a website with [MkDocs](https://www.mkdocs.org):
 
@@ -55,7 +93,28 @@ pip install -r requirements-docs.txt
 mkdocs serve          # preview at http://127.0.0.1:8000
 ```
 
-On GitHub, `.github/workflows/docs.yml` builds the site for pull requests that change the docs and publishes it to GitHub Pages on every push to `main` (set *Settings > Pages > Source* to **GitHub Actions**).
+On GitHub, `.github/workflows/docs.yml` builds the site for pull requests that change the docs and publishes it to GitHub Pages on every push to `main` (set _Settings > Pages > Source_ to **GitHub Actions**).
+
+## Credits
+
+VIBTOBIlab/scalemethyltobi is based on the ScaleMethyl workflow written by ScaleBio and is maintained by VIBTOBIlab.
+
+## Contributions and Support
+
+If you would like to contribute to this pipeline, please see the [contributing guidelines](docs/CONTRIBUTING.md). The development tools are pinned in `dev-environment.yml`.
+
+## Citations
+
+An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
+
+This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/main/LICENSE).
+
+> **The nf-core framework for community-curated bioinformatics pipelines.**
+>
+> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
+>
+> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
 
 ## License
+
 By purchasing product(s) and downloading the software product(s) of ScaleBio, You accept all of the terms of the [License Agreement](LICENSE.md). If You do not agree to these terms and conditions, You may not use or download any of the software product(s) of ScaleBio.

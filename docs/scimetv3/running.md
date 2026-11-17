@@ -3,14 +3,14 @@
 ## Parameters
 
 ```yaml
-fastqDir: /full/path/to/fastqs        # or runFolder: /path/to/illumina/run
-samples: samples.csv
+fastq_dir: /full/path/to/fastqs # or run_folder: /path/to/illumina/run
+input: samples.csv
 genome: /path/to/genome.json
-libStructure: "sciMETv3/lib.json"     # or "sciMETv3/lib_D50x.json"
-outDir: sciMETv3.out
+lib_structure: "sciMETv3/lib.json" # or "sciMETv3/lib_D50x.json"
+outdir: sciMETv3.out
 ```
 
-The `references/sciMETv3/` folder must be present in the copy of the workflow you run, because `libStructure` is resolved relative to `references/`. Alternatively give the full path to the `.json` file.
+The `references/sciMETv3/` folder must be present in the copy of the workflow you run, because `lib_structure` is resolved relative to `references/`. Alternatively give the full path to the `.json` file.
 
 Both index reads must be sequenced with at least 10 cycles.
 
@@ -78,7 +78,7 @@ sciMETv3_A02,GTCTTAACGT,TGCCGCCGAT
 
 All 96 rows of a PCR well share one `Sample_ID`, so bcl-convert writes one set of fastq files per PCR well. The index reads are kept in the `I1` / `I2` files (`CreateFastqForIndexReads,1`), so every read keeps its own barcodes; the Tn5 barcode is read later by `bc_parser`. Reads with an unknown Index 1 go to `Undetermined`.
 
-With `runFolder`, the workflow builds this samplesheet from samples.csv and `RunInfo.xml` and publishes it to `outDir/fastq/samplesheet.csv`. Use `libIndex2` in samples.csv to list only the PCR wells you sequenced (sequences from `pcr_i5.txt`); otherwise bcl-convert writes a set of (empty) fastq files for every i5 in the list, and empty sets can make `bc_parser` fail. Leave `libIndex` empty to use all 96 ligation barcodes.
+With `run_folder`, the workflow builds this samplesheet from samples.csv and `RunInfo.xml` and publishes it to `outdir/fastq/samplesheet.csv`. Use `libIndex2` in samples.csv to list only the PCR wells you sequenced (sequences from `pcr_i5.txt`); otherwise bcl-convert writes a set of (empty) fastq files for every i5 in the list, and empty sets can make `bc_parser` fail. Leave `libIndex` empty to use all 96 ligation barcodes.
 
 ```csv
 sample,barcodes,libName,libIndex2
@@ -88,7 +88,7 @@ DonorB,1E01-1H12,sciMETv3,AGCGGTATGA;ATCGGCGGCA
 
 `references/sciMETv3/example_bclconvert_samplesheet.csv` is an example for PCR wells A01 and A02, 151/10/10/151 cycles, on an instrument whose `RunInfo.xml` marks Index 2 as reverse complement (NextSeq 1000/2000, NovaSeq X). On those instruments `index2` is the i5 as written in the primer and bcl-convert reverse-complements it; on a NovaSeq 6000, `index2` must be the sequence from `pcr_i5.txt`.
 
-When running bcl-convert outside the workflow, the `Sample_ID` must start with the `libName` followed by `_`; then start the workflow with `--fastqDir`. Libraries that share all index combinations can only be separated by lane (a `Lane` column in the samplesheet).
+When running bcl-convert outside the workflow, the `Sample_ID` must start with the `libName` followed by `_`; then start the workflow with `--fastq_dir`. Libraries that share all index combinations can only be separated by lane (a `Lane` column in the samplesheet).
 
 ## Enzymatic conversion on Illumina
 

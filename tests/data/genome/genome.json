@@ -1,0 +1,9 @@
+{
+    "name": "synthetic",
+    "speciesName": "Synthetic test genome",
+    "bwa_index": "bwa_meth",
+    "ref_fasta": "genome.fa",
+    "filter_chrs": "filter_chrs.tsv",
+    "tssWin": "tss.bed",
+    "backgroundWin": "background.bed"
+}

@@ -4,24 +4,24 @@
 
 ## Read-level metrics
 
-| Status | Description |
-|---|---|
-| Pass | All expected barcodes were found |
-| BarcodeError | At least one barcode could not be matched to its barcode list |
-| LinkerError | A fixed linker sequence between barcodes was not found (not used by the methylation libraries) |
-| TooShortError | The read was too short for barcode matching |
+| Status        | Description                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Pass          | All expected barcodes were found                                                               |
+| BarcodeError  | At least one barcode could not be matched to its barcode list                                  |
+| LinkerError   | A fixed linker sequence between barcodes was not found (not used by the methylation libraries) |
+| TooShortError | The read was too short for barcode matching                                                    |
 
 ## Barcode-level metrics
 
 For each barcode (e.g. `i7`, `i5`, `tgmt`):
 
-| Category | Description |
-|---|---|
-| Exact | The sequence exactly matches a barcode in the list |
+| Category  | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Exact     | The sequence exactly matches a barcode in the list                                                 |
 | Corrected | The sequence has a mismatch but is closest to a single barcode in the list, and is corrected to it |
-| Ambiguous | The sequence is equally close to two barcodes in the list, and is discarded |
-| NoMatch | The sequence cannot be matched to any barcode in the list |
-| Error | No barcode sequence could be extracted, typically because a linker was not found |
+| Ambiguous | The sequence is equally close to two barcodes in the list, and is discarded                        |
+| NoMatch   | The sequence cannot be matched to any barcode in the list                                          |
+| Error     | No barcode sequence could be extracted, typically because a linker was not found                   |
 
 ## metrics.json
 

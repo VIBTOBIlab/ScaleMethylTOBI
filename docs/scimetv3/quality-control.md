@@ -40,14 +40,14 @@ After demultiplexing, check the barcode statistics in the library report or `bar
 
 Example from a sciMETv3 library sequenced as a whole lane with PhiX (D501-D508 i5 primers, one Tn5 plate):
 
-| Metric | Value |
-|---|---|
-| Pass | 79.7% |
-| i5 matched (exact + corrected) | 91.4% |
-| Ligation (i7) matched | 90.5% |
-| Tn5 matched | 91.0%, plus 1.3% ambiguous |
-| Corrected (one mismatch), each barcode | about 12% |
-| Unknown (Tn5 wells outside the sample table) | 0.6% |
+| Metric                                       | Value                      |
+| -------------------------------------------- | -------------------------- |
+| Pass                                         | 79.7%                      |
+| i5 matched (exact + corrected)               | 91.4%                      |
+| Ligation (i7) matched                        | 90.5%                      |
+| Tn5 matched                                  | 91.0%, plus 1.3% ambiguous |
+| Corrected (one mismatch), each barcode       | about 12%                  |
+| Unknown (Tn5 wells outside the sample table) | 0.6%                       |
 
 How to read this:
 
