@@ -4,7 +4,7 @@
 
 - Linux system with GLIBC >= 2.17 (for example CentOS 7 or later)
 - Java 17 or later
-- [Nextflow](https://www.nextflow.io) 25.10.4 or later
+- [Nextflow](https://www.nextflow.io) 26.04.0 or later
 - 64 GB of RAM and 12 CPU cores. For large datasets a distributed compute system (HPC or cloud) is strongly recommended.
 - Working storage of about 5x the input data size, e.g. about 4 TB of temporary storage for deep sequencing of a ScaleBio _small kit_.
 

@@ -8,7 +8,7 @@
   - Tool arguments and output paths of all processes in `conf/modules.config`, resources in `conf/base.config`
   - Parameters validated with `nextflow_schema.json` (nf-schema) and the sample table with `assets/schema_input.json`; `--help` lists all parameters
   - Software versions in `pipeline_info/scalemethyltobi_software_versions.yml`, together with the Nextflow execution reports
-  - Requires Nextflow >= 25.10.4; the code follows the Nextflow strict syntax (`nextflow lint`)
+  - Requires Nextflow >= 26.04.0 (typed parameters in `main.nf`); the code follows the Nextflow strict syntax (`nextflow lint`)
   - GitHub Actions for nf-test, nf-core lint and pre-commit; `.pre-commit-config.yaml`; development tools in `dev-environment.yml`
 - Input from one samplesheet (`--input`): the fastq files of each library are given in the `fastq_1`, `fastq_2`, `index_1` and `index_2` columns (absolute, relative to the samplesheet, or URLs), so file names no longer matter
   - Several sequencing runs (or lanes, or chunks) of a library are given as additional rows; each set of fastq files is demultiplexed by its own `bc_parser` job and the runs are combined per sample and Tn5 well before trimming
