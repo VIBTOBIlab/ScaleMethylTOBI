@@ -15,6 +15,8 @@ This copy is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), ori
 
 ## What the workflow does
 
+![Overview of the workflow steps](images/metro_map.svg)
+
 1. **Fastq generation** (only when starting from a run folder): Illumina `bcl-convert` writes one set of fastq files per PCR well.
 2. **Barcode demultiplexing**: `bc_parser` finds and error-corrects the cell barcodes and splits reads by sample and Tn5 well.
 3. **Adapter trimming** with `cutadapt`.

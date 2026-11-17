@@ -163,20 +163,20 @@ pre-commit install   # run prettier, whitespace checks and `nextflow lint` befor
 
 The pipeline follows the nf-core template (`nf-core pipelines create`, see `.nf-core.yml`):
 
-| Path                                                 | Content                                                                           |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `main.nf`                                            | Entry workflow: initialisation, main workflow, completion                         |
-| `workflows/scalemethyltobi.nf`                       | Main workflow                                                                     |
-| `subworkflows/local/`                                | Pipeline steps (genome preparation, demultiplexing, deduplication, matrices, ...) |
-| `subworkflows/local/utils_nfcore_scalemethyltobi_pipeline/` | Parameter validation and completion tasks (incl. `workflow_info.json`)     |
-| `subworkflows/nf-core/`                              | nf-core utility subworkflows (`nf-core subworkflows update`)                      |
-| `modules/local/<tool>/main.nf`                       | One process per module, with its tests in `modules/local/<tool>/tests/`          |
-| `bin/`                                               | Python scripts called by the modules                                              |
-| `conf/base.config`                                   | Resources of the processes                                                        |
-| `conf/modules.config`                                | Tool arguments (`ext.args`) and publishing paths of every process                 |
-| `conf/test.config`                                   | `test` profile on the synthetic dataset in `tests/data/`                          |
-| `references/`                                        | Library structures and barcode lists                                              |
-| `envs/`                                              | Definition of the container and conda environment with all tools                  |
+| Path                                                        | Content                                                                           |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `main.nf`                                                   | Entry workflow: initialisation, main workflow, completion                         |
+| `workflows/scalemethyltobi.nf`                              | Main workflow                                                                     |
+| `subworkflows/local/`                                       | Pipeline steps (genome preparation, demultiplexing, deduplication, matrices, ...) |
+| `subworkflows/local/utils_nfcore_scalemethyltobi_pipeline/` | Parameter validation and completion tasks (incl. `workflow_info.json`)            |
+| `subworkflows/nf-core/`                                     | nf-core utility subworkflows (`nf-core subworkflows update`)                      |
+| `modules/local/<tool>/main.nf`                              | One process per module, with its tests in `modules/local/<tool>/tests/`           |
+| `bin/`                                                      | Python scripts called by the modules                                              |
+| `conf/base.config`                                          | Resources of the processes                                                        |
+| `conf/modules.config`                                       | Tool arguments (`ext.args`) and publishing paths of every process                 |
+| `conf/test.config`                                          | `test` profile on the synthetic dataset in `tests/data/`                          |
+| `references/`                                               | Library structures and barcode lists                                              |
+| `envs/`                                                     | Definition of the container and conda environment with all tools                  |
 
 Conventions:
 

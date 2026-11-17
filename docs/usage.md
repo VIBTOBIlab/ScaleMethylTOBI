@@ -15,13 +15,13 @@ PBMC-S1,1A01-2D12,ScaleMethyl
 PBMC-S2,2E01-3H12,ScaleMethyl
 ```
 
-| Column      | Description                                                                                            |
-| ----------- | ------------------------------------------------------------------------------------------------------ |
-| `sample`    | Sample name; letters, digits and dashes only. Required.                                                |
-| `barcodes`  | Tn5 (sample) barcode wells of the sample, as ranges separated by `;`. Default: all wells.              |
-| `libName`   | Library name: the prefix of the fastq file names. Default: `ScaleMethyl`.                              |
-| `threshold` | Optional fixed unique-read threshold for cell calling.                                                 |
-| `resultDir` | Output directory of a previous run, only used with `--merged`.                                          |
+| Column      | Description                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| `sample`    | Sample name; letters, digits and dashes only. Required.                                   |
+| `barcodes`  | Tn5 (sample) barcode wells of the sample, as ranges separated by `;`. Default: all wells. |
+| `libName`   | Library name: the prefix of the fastq file names. Default: `ScaleMethyl`.                 |
+| `threshold` | Optional fixed unique-read threshold for cell calling.                                    |
+| `resultDir` | Output directory of a previous run, only used with `--merged`.                            |
 
 The file is validated with [assets/schema_input.json](../assets/schema_input.json). See the [sample table](user-guide/samples-csv.md) page for details.
 

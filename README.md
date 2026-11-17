@@ -16,6 +16,8 @@
 
 This repository is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at https://github.com/ScaleBio/ScaleMethyl. It adds library structures and helper scripts for **sciMETv3** libraries (Nichols et al. 2025, _Cell Genomics_ 5:100726), a fix for alignment against shared bwa-meth indexes, restructured documentation, and the structure, tests and CI of the [nf-core](https://nf-co.re) pipeline template.
 
+![VIBTOBIlab/scalemethyltobi metro map](docs/images/metro_map.svg)
+
 1. Fastq generation from a sequencer run folder ([`bcl-convert`](https://support.illumina.com/sequencing/sequencing_software/bcl-convert.html), optional)
 2. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 3. Barcode demultiplexing by sample and Tn5 well with error correction (`bc_parser`)
@@ -98,6 +100,10 @@ On GitHub, `.github/workflows/docs.yml` builds the site for pull requests that c
 ## Credits
 
 VIBTOBIlab/scalemethyltobi is based on the ScaleMethyl workflow written by ScaleBio and is maintained by VIBTOBIlab.
+
+We thank the following people for their contributions to this pipeline:
+
+- [Edoardo Giuili](https://github.com/edogiuili)
 
 ## Contributions and Support
 

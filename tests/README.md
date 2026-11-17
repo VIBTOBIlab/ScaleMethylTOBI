@@ -42,11 +42,11 @@ The pipeline snapshot (`tests/default.nf.test.snap`) has two entries:
 
 ## Test data
 
-| Path | Content |
-|---|---|
-| `data/samples.csv` | Two samples, Tn5 wells 1A01-1A03 and 1A07-1A09 |
-| `data/fastq/` | 3,690 read pairs in the ScaleBio v1.1 layout (`references/lib.json`): 12 cells with 300 reads each plus 30 background barcodes |
-| `data/genome/` | Random 72 kb genome (chr1, chr2, chrM), bwa-meth index, TSS and background windows |
+| Path               | Content                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `data/samples.csv` | Two samples, Tn5 wells 1A01-1A03 and 1A07-1A09                                                                                 |
+| `data/fastq/`      | 3,690 read pairs in the ScaleBio v1.1 layout (`references/lib.json`): 12 cells with 300 reads each plus 30 background barcodes |
+| `data/genome/`     | Random 72 kb genome (chr1, chr2, chrM), bwa-meth index, TSS and background windows                                             |
 
 The reads are bisulfite converted (CpG methylated with probability 0.8, CH unmethylated), so CpG methylation should come out near 80% and CH methylation near 0%.
 
