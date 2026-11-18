@@ -1,7 +1,7 @@
 //
 // Load the outputs of previous runs:
-//   1. Per-sample metrics, from --previous_outdir, or combined from the runs in the resultDir
-//      column of the samplesheet (--merge_runs)
+//   1. Per-sample metrics (cell_metrics/), from --previous_outdir, or combined from the runs in
+//      the resultDir column of the samplesheet (--merge_runs)
 //   2. With --start_post_extraction: the cell metadata and the methylation calls per Tn5 well,
 //      to regenerate the matrices and coverage files
 //
@@ -28,7 +28,7 @@ workflow LOAD_PREVIOUS_RESULTS {
         // [ sample, threshold, [ cellInfo ], [ cell_stats ], [ tss_enrich ] ]
         def ch_cell_infos = ch_samples
             .map { row ->
-                def dir = "${row.resultDir}/metrics_for_reporting"
+                def dir = metricsDir(row.resultDir)
                 [
                     [id: row.sample],
                     toIntOr0(row.threshold),
@@ -44,7 +44,7 @@ workflow LOAD_PREVIOUS_RESULTS {
         // [ sample, threshold, [ dedup_stats ], [ fragment_hist ] ]
         def ch_all_dedup_stats = ch_samples
             .map { row ->
-                def dir = "${row.resultDir}/metrics_for_reporting"
+                def dir = metricsDir(row.resultDir)
                 [
                     [id: row.sample],
                     toIntOr0(row.threshold),
@@ -62,7 +62,7 @@ workflow LOAD_PREVIOUS_RESULTS {
         ch_tss_enrich = COMBINE_BARCODE_CSVS.out.csvs.map { sample, _threshold, _cellInfo, _cellStats, tss -> [sample, tss] }
     } else {
         // Use the metrics of the previous output directory (or of the current one)
-        def dir = "${params.previous_outdir ?: params.outdir}/metrics_for_reporting"
+        def dir = metricsDir(params.previous_outdir ?: params.outdir)
         ch_metric_input = ch_samples.map { row ->
             [[id: row.sample], file("${dir}/${row.sample}.cell_stats.csv"), file("${dir}/${row.sample}.cellInfo.csv"), toIntOr0(row.threshold)]
         }
@@ -94,17 +94,18 @@ workflow LOAD_PREVIOUS_RESULTS {
 
         // [ meta, [ allCells.csv ] ]
         ch_all_cells = ch_result_dirs
-            .map { sample, dir -> [[id: sample], file("${dir}/samples/${sample}.allCells.csv", checkIfExists: true)] }
+            .map { sample, dir -> [[id: sample], allCellsFile(dir, sample)] }
             .groupTuple()
 
         // [ well meta, [ parquet files ], context ]
         def ch_met = ch_result_dirs
             .flatMap { sample, dir ->
-                def wells = file("${dir}/samples/${sample}.allCells.csv", checkIfExists: true)
+                def wells = allCellsFile(dir, sample)
                     .splitCsv(header: true, strip: true)
                     .collect { cell -> cell.tgmt_well }
                     .unique()
-                wells.collect { well -> [[id: "${sample}.${well}".toString(), sample: sample, well: well], "${dir}/matrix_generation/${sample}.${well}.met_"] }
+                def parquetDir = previousRunPath(dir, 'methylation_calls/parquet', 'matrix_generation')
+                wells.collect { well -> [[id: "${sample}.${well}".toString(), sample: sample, well: well], "${parquetDir}/${sample}.${well}.met_"] }
             }
             .combine(channel.fromList(contexts))
             .map { meta, prefix, context -> [meta, file("${prefix}${context}.parquet"), context] }
@@ -127,6 +128,30 @@ workflow LOAD_PREVIOUS_RESULTS {
     all_cells     = ch_all_cells     // channel: [ meta, [ allCells.csv ] ]
     met_cg        = ch_met_cg        // channel: [ well meta, [ met_CG.parquet ] ]
     met_ch        = ch_met_ch        // channel: [ well meta, [ met_CH.parquet ] ]
+}
+
+//
+// Folder of a previous output directory: the current layout, or the layout before version 1.5.0
+//
+def previousRunPath(outdir, current, before150) {
+    def path = file("${outdir}/${current}")
+    return path.exists() ? path : file("${outdir}/${before150}")
+}
+
+//
+// Per-sample metrics of a previous run: cell_metrics/ (metrics_for_reporting/ before version 1.5.0)
+//
+def metricsDir(outdir) {
+    return previousRunPath(outdir, 'cell_metrics', 'metrics_for_reporting')
+}
+
+//
+// Cell metadata of a sample in a previous run, with the barcodes as cell names:
+// cell_metrics/<sample>.allCells.csv (samples/<sample>.allCells.csv before version 1.5.0)
+//
+def allCellsFile(outdir, sample) {
+    def allCells = file("${outdir}/cell_metrics/${sample}.allCells.csv")
+    return allCells.exists() ? allCells : file("${outdir}/samples/${sample}.allCells.csv", checkIfExists: true)
 }
 
 //

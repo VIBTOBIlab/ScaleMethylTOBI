@@ -14,8 +14,9 @@ process CREATE_AMETHYST {
 
     script:
     // met_ch is empty when CH methylation is not calculated (--skip_ch_context)
+    def args = task.ext.args ?: ''
     def met_opts = met_ch ? "--met_cg metCG* --met_ch metCH*" : "--met_cg metCG*"
     """
-    write_amethyst.py ${met_opts} --all_cells allCells* --sample ${meta.id}
+    write_amethyst.py ${met_opts} --all_cells allCells* --sample ${meta.id} ${args}
     """
 }

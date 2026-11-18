@@ -1,9 +1,6 @@
-# Version 1.4.0 (TOBI lab changes)
+# Version 1.5.0
 
-- sciMETv3 support: library structures, barcode lists and helper scripts in `references/sciMETv3/`
-- Alignment no longer fails when the time of the bwa-meth index `.c2t` file cannot be set (index owned by another user)
-- Documentation restructured and published as an MkDocs site (`mkdocs.yml`, `docs/`)
-- Pipeline restructured with the nf-core template (nf-core/tools 4.2.2) as `VIBTOBIlab/scalemethyltobi`; the outputs are unchanged
+- Pipeline restructured with the nf-core template (nf-core/tools 4.2.2) as `VIBTOBIlab/scalemethyltobi`; the output files are unchanged, only their folders (see below)
   - `main.nf`, `workflows/`, `subworkflows/local/`, one module per process in `modules/local/` (with nf-test tests)
   - Tool arguments and output paths of all processes in `conf/modules.config`, resources in `conf/base.config`
   - Parameters validated with `nextflow_schema.json` (nf-schema) and the sample table with `assets/schema_input.json`; `--help` lists all parameters
@@ -41,12 +38,34 @@
 
 - The samplesheet is read with nf-schema (`samplesheetToList`, `assets/schema_input.json`) in the pipeline initialisation, which replaces `bin/regularize_samples_csv.py`: the default barcodes (all wells of the library structure), the `split` column and the checks (conflicting rows of a sample, more than one sample of a library without barcodes) are done there; `samples.csv` in the output folder is unchanged
 - The main workflow is a short sequence of commented steps; the read processing up to the alignment is one subworkflow (`FASTQ_DEMUX_TRIM_ALIGN`) and the per-sample statistics are merged in `BAM_DEDUP_EXTRACT`
+- Cells are named `<sample>_<barcode>` in `samples/` (`allCells.csv`, matrix barcodes and Amethyst `.h5` files), so that all samples and libraries can be loaded together in Amethyst without `rename_amethyst_cells.py`; `--skip_cell_prefix` keeps the barcodes as names. The workflow itself keeps using the barcodes (`cell_metrics/<sample>.allCells.csv`)
+- Output folders organised per tool, as in nf-core/methylseq (the file names and contents are unchanged; `samples/` keeps the layout read by Amethyst). Output folders of previous versions can still be used to restart (`--reporting_only`, `--start_post_extraction`, `--merge_runs`, `--bam1_dir` / `--bam2_dir`):
+
+  | Before                                                  | Now                                                                                                                       |
+  | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+  | `fastq/fastqc/`                                         | `cutadapt/fastqc/`                                                                                                        |
+  | `fastq/trim/<sample>.<well>/`                           | `cutadapt/logs/` (with the cutadapt report `<sample>.<well>.trim_log`); trimmed fastq files in `cutadapt/`                |
+  | `barcodes/`                                             | `bc_parser/`                                                                                                              |
+  | `alignments/bam/<sample>.<well>/`                       | `bwameth/alignments/` (with `samtools_stats/<sample>.<well>.flagstat.txt`)                                                |
+  | `bamMerge/<sample>.<well>/`                             | `bwameth/alignments/merged/`                                                                                              |
+  | `alignments/dedup/<sample>.<well>/`                     | `bwameth/deduplicated/` (BAM files) and `bwameth/deduplicated/logs/` (statistics); `cellInfo.txt` in `methylation_calls/` |
+  | `matrix_generation/`                                    | `methylation_calls/parquet/`                                                                                              |
+  | `metrics_for_reporting/`                                | `cell_metrics/`                                                                                                           |
+  | `report/sample_reports/`, `report/library_report/`      | `reports/samples/`, `reports/libraries/`                                                                                  |
+  | `samples/`, `samples.csv`, `multiqc/`, `pipeline_info/` | unchanged                                                                                                                 |
+
 - Fixes
   - `genomeWindowBlackList` in `genome.json` is resolved relative to `genome.json`, like the other paths
   - Parameters given on the command line as `true`/`false` or numbers are converted (with Nextflow 26 they stayed strings, so e.g. `--split_fastq false` had no effect)
   - `--split_fastq false` no longer fails in the matrix generation (the per-sample and merged matrices had the same file names)
   - With `--reporting_only` and several samples, the reports of all samples are generated
   - The samples are always in the same (alphabetical) order in the library metrics (`<library>.combinedPassingCellStats.csv`) and library report
+
+# Version 1.4.0 (TOBI lab changes)
+
+- sciMETv3 support: library structures, barcode lists and helper scripts in `references/sciMETv3/`
+- Alignment no longer fails when the time of the bwa-meth index `.c2t` file cannot be set (index owned by another user)
+- Documentation restructured and published as an MkDocs site (`mkdocs.yml`, `docs/`)
 
 # Version 1.3
 

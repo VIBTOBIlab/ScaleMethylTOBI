@@ -36,7 +36,7 @@ zcat lib_S1_L001_I2_001.fastq.gz | head -4000000 | awk 'NR%4==2' \
 
 ## Expected barcode metrics
 
-After demultiplexing, check the barcode statistics in the library report or `barcodes/<libName>.metrics.json` ([Barcode metrics](../outputs/barcode-metrics.md)).
+After demultiplexing, check the barcode statistics in the library report or `bc_parser/<libName>.metrics.json` ([Barcode metrics](../outputs/barcode-metrics.md)).
 
 Example from a sciMETv3 library sequenced as a whole lane with PhiX (D501-D508 i5 primers, one Tn5 plate):
 

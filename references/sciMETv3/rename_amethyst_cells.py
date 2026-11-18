@@ -3,6 +3,9 @@
 Prefix cell names in ScaleMethyl Amethyst outputs, so that libraries with the same
 barcodes (e.g. two PCR strips with the same i5 primers) can be combined.
 
+Since version 1.5.0 the workflow names the cells <sample>_<barcode> itself (unless run with
+--skip_cell_prefix); this script is for the output folders of earlier versions.
+
 Renames, for every sample in <samples_dir>:
     methylation_coverage/amethyst/<sample>/<sample>.<well>_cov.h5
         /CG/<barcode>  ->  /CG/<prefix>_<barcode>   (same for CH)

@@ -9,8 +9,9 @@
        (2-3 are replaced by LOAD_PREVIOUS_RESULTS with --reporting_only / --start_post_extraction)
     4. Cells and metrics        CELL_METRICS
     5. Matrices and coverage    MATRIX_GENERATION (not with --reporting_only)
-    6. QC reports               REPORTING, MultiQC
-    7. Software versions
+    6. Cell names for Amethyst  PREFIX_CELL_NAMES (not with --skip_cell_prefix)
+    7. QC reports               REPORTING, MultiQC
+    8. Software versions
 ----------------------------------------------------------------------------------------
 */
 
@@ -20,6 +21,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 include { MULTIQC                } from '../modules/local/multiqc'
+include { PREFIX_CELL_NAMES      } from '../modules/local/prefix_cell_names'
 
 include { PREPARE_GENOME         } from '../subworkflows/local/prepare_genome'
 include { FASTQ_DEMUX_TRIM_ALIGN } from '../subworkflows/local/fastq_demux_trim_align'
@@ -160,7 +162,20 @@ workflow SCALEMETHYLTOBI {
     }
 
     //
-    // 6. QC reports: per sample and per library, and MultiQC (read QC, trimming, alignment)
+    // 6. Cell names <sample>_<barcode> in the files of samples/ (the Amethyst .h5 files are written
+    //    with these names by MATRIX_GENERATION), so that all samples and libraries can be loaded
+    //    together in Amethyst. The pipeline itself uses the barcodes.
+    //
+    if (!params.skip_cell_prefix) {
+        PREFIX_CELL_NAMES(
+            CELL_METRICS.out.all_cells
+                .join(ch_cg_mtx_barcodes, remainder: true)
+                .map { meta, all_cells, barcodes -> [meta, all_cells, barcodes ?: []] }
+        )
+    }
+
+    //
+    // 7. QC reports: per sample and per library, and MultiQC (read QC, trimming, alignment)
     //
     REPORTING(
         CELL_METRICS.out.report_input,
@@ -186,7 +201,7 @@ workflow SCALEMETHYLTOBI {
     }
 
     //
-    // 7. Collate and save software versions (the `versions` topic of all modules)
+    // 8. Collate and save software versions (the `versions` topic of all modules)
     //
     def topic_versions = channel.topic("versions")
         .distinct()

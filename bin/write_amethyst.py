@@ -11,7 +11,7 @@ from pathlib import Path
 from reporting.reporting import Utils
 
 
-def write_amethyst(met_cg: list[Path], met_ch: list[Path], barcodes: list, sample: str):
+def write_amethyst(met_cg: list[Path], met_ch: list[Path], barcodes: list, sample: str, cell_prefix: str = ""):
     """
     Writes Amethyst hdf5 files with this file structure: https://github.com/lrylaarsdam/amethyst/raw/main/images/h5structure.png?raw=true
 
@@ -20,6 +20,8 @@ def write_amethyst(met_cg: list[Path], met_ch: list[Path], barcodes: list, sampl
         met_ch: List of Parquet files containing CH context methylation calls.
         barcodes: Passing barcodes for this well coordinate.
         sample: Sample name with well coordinate for output file name.
+        cell_prefix: Prefix of the cell names in the file ("<prefix>_<barcode>"), so that cells of
+            different samples / libraries have unique names in Amethyst; no prefix if empty.
     """
     with h5py.File(f"{sample}_cov.h5", "w") as f:
         mets_list = []
@@ -57,7 +59,7 @@ def write_amethyst(met_cg: list[Path], met_ch: list[Path], barcodes: list, sampl
                 )
                 for field in cov.keys():
                     arr[field] = cov[field]
-                post = group.create_group(bc)
+                post = group.create_group(f"{cell_prefix}_{bc}" if cell_prefix else bc)
                 # base-level values are given the "1" dataset name
                 post.create_dataset("1", data=arr, compression="gzip", compression_opts=9)
 
@@ -79,12 +81,14 @@ def main():
         help="File with all cell barcode information",
     )
     parser.add_argument("--sample", required=True, help="Sample name with well coordinate")
+    parser.add_argument("--cell_prefix", default="", help="Prefix of the cell names: <prefix>_<barcode>")
     args = parser.parse_args()
     write_amethyst(
         met_cg=args.met_cg,
         met_ch=args.met_ch,
         barcodes=Utils.get_passing_cells(args.all_cells, args.sample),
         sample=args.sample,
+        cell_prefix=args.cell_prefix,
     )
 
 

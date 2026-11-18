@@ -44,7 +44,7 @@ template:
   name: scalemethyltobi
   description: ScaleBio single-cell DNA methylation analysis workflow
   author: ScaleBio, VIBTOBIlab
-  version: 1.4.0dev
+  version: 1.5.0
   force: true
   outdir: .
   skip_features:

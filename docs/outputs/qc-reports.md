@@ -4,7 +4,7 @@ The workflow writes an HTML report per sample and per library in `outdir/report/
 
 ## Sample report
 
-`report/sample_reports/<sample>/<sample>.report.html` summarises one sample, i.e. all or a subset of the Tn5 wells of a library.
+`reports/samples/<sample>/<sample>.report.html` summarises one sample, i.e. all or a subset of the Tn5 wells of a library.
 
 ### Read statistics
 
@@ -52,7 +52,7 @@ A UMAP of the 20,000 most variable windows from the matrix generation step, with
 
 ## Library report
 
-`report/library_report/<libName>/library.<libName>.report.html` summarises a whole library: sequencing, barcodes and demultiplexing for all samples in it.
+`reports/libraries/<libName>/<libName>.report.html` summarises a whole library: sequencing, barcodes and demultiplexing for all samples in it.
 
 ### Barcode metrics
 

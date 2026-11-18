@@ -93,4 +93,4 @@ When running the pipeline from GitHub, Nextflow caches it. Update to the latest 
 nextflow pull VIBTOBIlab/scalemethyltobi
 ```
 
-To make your results reproducible, give the version of the pipeline with `-r` (e.g. `-r 1.4.0`). The version is recorded in `pipeline_info/` and `workflow_info.json` of the output directory.
+To make your results reproducible, give the version of the pipeline with `-r` (e.g. `-r 1.5.0`). The version is recorded in `pipeline_info/` and `workflow_info.json` of the output directory.

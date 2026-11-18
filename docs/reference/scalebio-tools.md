@@ -31,7 +31,7 @@ As used in the workflow (`--duplicate-key Leftmost`, parameter `dedup_key`), `sc
 
 ### Outputs
 
-Per sample and Tn5 well, in `alignments/dedup/<sample>.<well>/`:
+Per sample and Tn5 well, in `bwameth/deduplicated/logs/` (`<sample>.<well>.*`):
 
 | File                                | Description                                                          |
 | ----------------------------------- | -------------------------------------------------------------------- |

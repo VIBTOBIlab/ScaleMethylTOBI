@@ -2,11 +2,19 @@
 
 Libraries made with the same barcodes (for example two PCR strips with the same i5 primers) are [run as separate libraries](running.md#several-libraries-with-the-same-barcodes). Their outputs contain the same cell IDs for different cells: `GTCTTAACGT+TATAGCCT+GAACCGCG` in `DonorA-strip1` and in `DonorA-strip2` are two different nuclei. Within one library, one barcode is one cell.
 
-The workflow keeps them apart by writing every output per sample (`allCells.csv`, matrices, Amethyst files), but inside these files cells are named by barcode only. Before combining libraries in one analysis, give every cell a unique name, e.g. by adding the sample or library name: `DonorA-strip1_GTCTTAACGT+TATAGCCT+GAACCGCG`. Otherwise tools either merge the two cells or refuse to combine the data.
+The workflow keeps them apart by writing every output per sample (`allCells.csv`, matrices, Amethyst files). Since version 1.5.0 it also names the cells in `samples/` `<sample>_<barcode>`, e.g. `DonorA-strip1_GTCTTAACGT+TATAGCCT+GAACCGCG`, in all three places Amethyst reads:
 
-## rename_amethyst_cells.py
+| File                                                            | Cell names                                          |
+| --------------------------------------------------------------- | --------------------------------------------------- |
+| `<sample>.allCells.csv`                                         | `cell_id` = `<sample>_<barcode>`                    |
+| `genome_bin_matrix/<sample>.barcodes.tsv`                       | `<sample>_<barcode>`                                |
+| `methylation_coverage/amethyst/<sample>/<sample>.<well>_cov.h5` | Groups `/CG/<sample>_<barcode>`, `/CH/<sample>_<barcode>` |
 
-`references/sciMETv3/rename_amethyst_cells.py` adds a prefix to the cell names in the `samples/` folder of a run, consistently across:
+With unique sample names per library (as recommended), every cell has a unique name, and the `samples/` folder can be loaded directly with Amethyst (see [below](#loading-into-amethyst)). The workflow itself keeps working with the barcodes: `cell_metrics/<sample>.allCells.csv` has the barcodes as cell names and is used to restart, and the per-cell `.cov` / `.allc` files keep their barcode file names. Use `--skip_cell_prefix` to keep the barcodes as cell names in `samples/` as well.
+
+## Outputs of earlier versions: rename_amethyst_cells.py
+
+For output folders of versions before 1.5.0 (or runs with `--skip_cell_prefix`), `references/sciMETv3/rename_amethyst_cells.py` adds the prefix afterwards, consistently across:
 
 | File                                                            | Change                                                                                                   |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -41,11 +49,11 @@ It prints one line per sample with the number of files and cells and the prefix 
 
 ```r
 library(amethyst)
-obj <- createScaleObject(directory = "ScaleMethyl.out/samples_renamed",
+obj <- createScaleObject(directory = "ScaleMethyl.out/samples", # or samples_renamed for earlier versions
                          genomeMatrices = c("CG.score"))
 ```
 
-`createScaleObject` reads every `<sample>.allCells.csv` in the folder (passing cells only), finds each cell's `.h5` file through its `tgmt_well`, and loads the requested matrices from `genome_bin_matrix/<sample>.<matrix>.mtx.gz` with `<sample>.CG.features.tsv` / `<sample>.CH.features.tsv`. The matrix columns are named from `cell_id` in `allCells.csv`, so the renamed IDs carry through.
+`createScaleObject` reads every `<sample>.allCells.csv` in the folder (passing cells only), finds each cell's `.h5` file through its `tgmt_well`, and loads the requested matrices from `genome_bin_matrix/<sample>.<matrix>.mtx.gz` with `<sample>.CG.features.tsv` / `<sample>.CH.features.tsv`. The matrix columns are named from `cell_id` in `allCells.csv`, so the `<sample>_<barcode>` names carry through.
 
 If `createScaleObject` reports a missing `genome_bin_matrix/<sample>.CG.features.tsv`, the matrix files are not in the folder. Link them from the original run:
 
@@ -56,7 +64,7 @@ for f in samples/genome_bin_matrix/*; do ln -s "$(realpath "$f")" samples_rename
 
 ## Other tools
 
-For matrices loaded outside Amethyst (Seurat, Scanpy), prefix the column names the same way, e.g. from `<sample>.barcodes.tsv`:
+The matrix columns in `genome_bin_matrix/<sample>.barcodes.tsv` already carry the `<sample>_` prefix, so matrices loaded outside Amethyst (Seurat, Scanpy) have unique cell names too. For outputs of earlier versions, prefix them the same way:
 
 ```bash
 sed "s/^/DonorA-strip1_/" DonorA-strip1.barcodes.tsv > DonorA-strip1.barcodes.renamed.tsv

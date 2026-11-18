@@ -1,6 +1,6 @@
 # Parameters
 
-Parameters are set in the `runParams.yml` file or on the command line (`--name value`). Defaults are defined in `nextflow.config`; all parameters are described and validated with `nextflow_schema.json` (`nextflow run VIBTOBIlab/scalemethyltobi --help`). Parameter names use snake_case, as in nf-core pipelines; see the [changelog](../changelog.md) for the names used before version 1.4.0.
+Parameters are set in the `runParams.yml` file or on the command line (`--name value`). Defaults are defined in `nextflow.config`; all parameters are described and validated with `nextflow_schema.json` (`nextflow run VIBTOBIlab/scalemethyltobi --help`). Parameter names use snake_case, as in nf-core pipelines; see the [changelog](../changelog.md) for the names used before version 1.5.0.
 
 ## Inputs
 
@@ -39,10 +39,11 @@ Steps and outputs that run by default can be skipped with `skip_*`; intermediate
 | `skip_cov`           | `false` | Do not write the per-cell methylation in bismark `.cov` format (`chr`, `pos`, `percent_methylated`, `methylated_count`, `unmethylated_count`)       |
 | `skip_allc`          | `false` | Do not write the per-cell methylation in [ALLCools](https://lhqing.github.io/ALLCools/intro.html) format (tabix-indexed)                            |
 | `skip_amethyst`      | `false` | Do not write the per-cell methylation in [Amethyst](https://github.com/lrylaarsdam/amethyst) `.h5` format (Amethyst 1.0.0+)                          |
+| `skip_cell_prefix`   | `false` | Keep the barcodes as cell names in `samples/` (default: `<sample>_<barcode>`, for loading several samples and libraries together in Amethyst) |
 | `skip_window_matrix` | `false` | Do not generate the genome-bin methylation matrices                                                                                                 |
-| `save_parquet`       | `true`  | Publish the per-well methylation calls (`matrix_generation/`), needed for `start_post_extraction`                                                  |
+| `save_parquet`       | `true`  | Publish the per-well methylation calls (`methylation_calls/parquet/`), needed for `start_post_extraction`                                                  |
 | `save_demux_fastq`   | `false` | Publish the demultiplexed sample fastq files                                                                                                        |
-| `save_trimmed`       | `false` | Publish the trimmed fastq files (`fastq/trim/`)                                                                                                     |
+| `save_trimmed`       | `false` | Publish the trimmed fastq files (`cutadapt/`)                                                                                                     |
 | `save_bam`           | `false` | Publish the aligned BAM files                                                                                                                       |
 | `save_dedup_bam`     | `false` | Publish the deduplicated BAM files                                                                                                                  |
 
@@ -73,7 +74,7 @@ By default a barcode is called a cell based on its number of unique (deduplicate
 | `min_uniq_total`      | `1`     | Also require at least this percentage of unique reads (unique / total reads) |
 | `max_uniq_total`      | `100`   | ... and at most this percentage                                              |
 
-A fixed threshold per sample can be set in the `threshold` column of [samples.csv](samples-csv.md); it replaces the calculated one. The sample report plots unique reads against percent unique reads (`report/sample_reports/<sample>/png/<sample>.complexityTotal.png`), which helps to choose `min_uniq_total` / `max_uniq_total`.
+A fixed threshold per sample can be set in the `threshold` column of [samples.csv](samples-csv.md); it replaces the calculated one. The sample report plots unique reads against percent unique reads (`reports/samples/<sample>/png/<sample>.complexityTotal.png`), which helps to choose `min_uniq_total` / `max_uniq_total`.
 
 To try a different threshold without rerunning everything, use the [reporting-only workflow](restarting-and-merging.md#reporting-only).
 

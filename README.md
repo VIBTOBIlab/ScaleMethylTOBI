@@ -74,7 +74,7 @@ nextflow run VIBTOBIlab/scalemethyltobi \
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
 > [!IMPORTANT]
-> Since version 1.4.0 the parameters use snake_case, as in nf-core pipelines (e.g. `--samples` is now `--input`, `--outDir` is `--outdir`). The fastq files are listed in the samplesheet (`--fastqDir` and `--runFolder` were removed), and bwa-meth is the only aligner. See the [changelog](CHANGELOG.md).
+> Since version 1.5.0 the parameters use snake_case, as in nf-core pipelines (e.g. `--samples` is now `--input`, `--outDir` is `--outdir`). The fastq files are listed in the samplesheet (`--fastqDir` and `--runFolder` were removed), and bwa-meth is the only aligner. See the [changelog](CHANGELOG.md).
 
 ## Documentation
 

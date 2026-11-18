@@ -244,6 +244,12 @@
                     "description": "Do not write the per-cell methylation coverage in Amethyst hdf5 format.",
                     "fa_icon": "fas fa-fast-forward"
                 },
+                "skip_cell_prefix": {
+                    "type": "boolean",
+                    "description": "Keep the barcodes as cell names in samples/ instead of <sample>_<barcode>.",
+                    "help_text": "By default the cells in samples/ (allCells.csv, the matrix barcodes and the Amethyst .h5 files) are named <sample>_<barcode>, so that the samples and libraries of a run (or of several runs) can be loaded together in Amethyst without name clashes.",
+                    "fa_icon": "fas fa-tag"
+                },
                 "save_parquet": {
                     "type": "boolean",
                     "default": true,

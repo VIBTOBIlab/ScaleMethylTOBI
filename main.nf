@@ -37,6 +37,7 @@ params {
     skip_cov: Boolean
     skip_allc: Boolean
     skip_amethyst: Boolean
+    skip_cell_prefix: Boolean
     save_parquet: Boolean
     save_demux_fastq: Boolean
     save_trimmed: Boolean

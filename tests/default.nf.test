@@ -20,8 +20,8 @@ nextflow_pipeline {
             allFiles = allFiles.sort { relPath(it) }
 
             // Files whose content is not reproducible (timestamps, paths, binary
-            // formats with embedded metadata, MultiQC): only their presence is checked
-            def unstable = ~/(multiqc\/.*|.*(\.html|\.png|\.parquet|\.h5|\.tbi|workflow_info\.json))$/
+            // formats with embedded metadata, MultiQC, cutadapt reports): only their presence is checked
+            def unstable = ~/(multiqc\/.*|.*(\.html|\.png|\.parquet|\.h5|\.tbi|\.trim_log|workflow_info\.json))$/
 
             // Cells are written in a different order on each run, so text and
             // gzipped outputs are compared by the md5 of their sorted lines

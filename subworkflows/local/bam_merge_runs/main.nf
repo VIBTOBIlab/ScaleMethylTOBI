@@ -7,22 +7,34 @@ include { MERGE_BAM } from '../../../modules/local/merge_bam'
 workflow BAM_MERGE_RUNS {
 
     take:
-    bam1_dir // string: alignments/bam directory of the first run
-    bam2_dir // string: alignments/bam directory of the second run
+    bam1_dir // string: bwameth/alignments directory of the first run
+    bam2_dir // string: bwameth/alignments directory of the second run
 
     main:
-    // The directory structure is expected to match the alignments/bam output of this workflow:
-    // <dir>/<sample>.<well>/<sample>.<well>.bam
+    // The BAM files of a previous run (--save_bam): <dir>/<sample>.<well>.bam in bwameth/alignments,
+    // or <dir>/<sample>.<well>/<sample>.<well>.bam in alignments/bam before version 1.5.0
     // [ meta, bam ]
-    def ch_bam1 = channel.fromPath("${bam1_dir}/*/*bam", checkIfExists: true)
-        .map { bam -> [bamMeta(bam), bam] }
-    def ch_bam2 = channel.fromPath("${bam2_dir}/*/*bam", checkIfExists: true)
-        .map { bam -> [bamMeta(bam), bam] }
+    def ch_bam1 = channel.fromList(previousBams(bam1_dir)).map { bam -> [bamMeta(bam), bam] }
+    def ch_bam2 = channel.fromList(previousBams(bam2_dir)).map { bam -> [bamMeta(bam), bam] }
 
     MERGE_BAM(ch_bam1.join(ch_bam2, failOnDuplicate: true))
 
     emit:
     bam = MERGE_BAM.out.bam // channel: [ meta, bam ]
+}
+
+//
+// BAM files of a previous run: <dir>/*.bam, or <dir>/*/*.bam (layout before version 1.5.0)
+//
+def previousBams(dir) {
+    def bams = files("${dir}/*.bam")
+    if (!bams) {
+        bams = files("${dir}/*/*.bam")
+    }
+    if (!bams) {
+        error("No BAM files in ${dir}")
+    }
+    return bams
 }
 
 //

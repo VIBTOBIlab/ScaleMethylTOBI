@@ -1,9 +1,9 @@
 reports:
-  "**/library_report/**/*.report.html":
+  "reports/libraries/**/*.report.html":
     display: "Library QC Summary Report"
-  "**/sample_reports/**/*.report.html":
+  "reports/samples/**/*.report.html":
     display: "Sample QC Summary Report"
-  "**/*.combinedPassingCellStats.csv":
+  "reports/libraries/**/*.combinedPassingCellStats.csv":
     display: "Combined Passing Cell Statistics"
   "multiqc/multiqc_report.html":
     display: "MultiQC report (read QC, trimming, alignment)"

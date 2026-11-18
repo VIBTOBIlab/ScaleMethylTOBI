@@ -37,7 +37,7 @@ and commit the changed `.snap` files together with the code change.
 
 The pipeline snapshot (`tests/default.nf.test.snap`) has two entries:
 
-- `-profile test`: the path of every published file (except `pipeline_info/`), the md5 of the sorted lines of the text and gzipped outputs (cells are written in a different order on each run), the header line of the `.mtx.gz` matrices and, for `report_clusters.tsv`, only the cell IDs (the cluster labels of the random synthetic cells change between runs). HTML, PNG, parquet, h5, tbi, `workflow_info.json` and the MultiQC files are only checked by name.
+- `-profile test`: the path of every published file (except `pipeline_info/`), the md5 of the sorted lines of the text and gzipped outputs (cells are written in a different order on each run), the header line of the `.mtx.gz` matrices and, for `report_clusters.tsv`, only the cell IDs (the cluster labels of the random synthetic cells change between runs). HTML, PNG, parquet, h5, tbi, `workflow_info.json`, the cutadapt reports (`.trim_log`) and the MultiQC files are only checked by name.
 - `software_versions`: `pipeline_info/scalemethyltobi_software_versions.yml` without the Nextflow version. It changes with the pipeline version and the container.
 
 ## Test data

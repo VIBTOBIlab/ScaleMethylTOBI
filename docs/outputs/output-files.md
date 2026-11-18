@@ -1,10 +1,29 @@
 # Output files
 
-All results are written to the folder set by `--outdir` (`ScaleMethyl.out` by default). Most users only need the reports in `report/` and the single-cell outputs in `samples/`.
+All results are written to the folder set by `--outdir` (`ScaleMethyl.out` by default). Most users only need the reports in `reports/` and the single-cell outputs in `samples/`. The other folders follow the nf-core convention of one folder per tool:
+
+```
+<outdir>/
+├── samples.csv            sample table as used by the run
+├── samples/               single-cell results (the layout read by Amethyst)
+├── reports/               QC reports per sample and per library
+├── cell_metrics/          per-sample metrics behind the reports
+├── methylation_calls/     per-cell methylation calls per sample and Tn5 well
+├── bwameth/               alignments and deduplication
+├── cutadapt/              read QC (FastQC) and trimming
+├── bc_parser/             barcode demultiplexing
+├── multiqc/               MultiQC report
+├── pipeline_info/         Nextflow reports, parameters, software versions
+└── workflow_info.json
+```
+
+The layout changed in version 1.5.0; see the [changelog](../changelog.md) for the previous paths.
 
 In the paths below, `<sample>` is a sample name from samples.csv, `<well>` a Tn5 well (e.g. `1A01`), `<libName>` a library name and `<context>` `CG` or `CH`.
 
 ## samples/: single-cell results
+
+The cells are named `<sample>_<barcode>` in this folder (`cell_id` in `allCells.csv`, the matrix barcodes and the Amethyst `.h5` files), so that all samples and libraries can be loaded together in Amethyst; `--skip_cell_prefix` keeps the barcodes as names. The per-cell `.cov` / `.allc` files are named by barcode.
 
 | File                                                            | Description                                                                                                                                                                                                                          |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -37,62 +56,81 @@ Each `.h5` file holds the passing cells of one sample and Tn5 well, with one gro
 obj <- createScaleObject(directory = "ScaleMethyl.out/samples", genomeMatrices = c("CG.score"))
 ```
 
-## report/: QC reports
+## reports/: QC reports
 
-| File                                                                         | Description                                                                                                       |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `report/sample_reports/<sample>/<sample>.report.html`                        | Interactive report per sample                                                                                     |
-| `report/sample_reports/<sample>/csv/`                                        | Sample metrics as csv, including `<sample>.report_clusters.tsv` (cluster of each passing cell in the report UMAP) |
-| `report/sample_reports/<sample>/png/`                                        | Report figures                                                                                                    |
-| `report/library_report/<libName>/library.<libName>.report.html`              | Barcode and demultiplexing statistics for a whole library                                                         |
-| `report/library_report/<libName>/csv/<libName>.combinedPassingCellStats.csv` | Key metrics of the passing cells of the library                                                                   |
+| File                                                                   | Description                                                                                                       |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `samples/<sample>/<sample>.report.html`                                | Interactive report per sample                                                                                     |
+| `samples/<sample>/csv/`                                                | Sample metrics as csv, including `<sample>.report_clusters.tsv` (cluster of each passing cell in the report UMAP) |
+| `samples/<sample>/png/`                                                | Report figures                                                                                                    |
+| `libraries/<libName>/<libName>.report.html`                            | Barcode and demultiplexing statistics for a whole library                                                         |
+| `libraries/<libName>/<libName>.combinedPassingCellStats.csv`           | Key metrics of the passing cells of the library                                                                   |
+| `libraries/<libName>/csv/`, `libraries/<libName>/png/`                 | Library metrics as csv and report figures                                                                         |
 
 See [QC reports](qc-reports.md) for what the reports show.
 
-## barcodes/: demultiplexing
+## cell_metrics/: per-sample metrics
+
+The metrics of each sample, merged over its Tn5 wells; the reports are built from them, and `reporting_only` / `merge_runs` read them from previous runs.
+
+| File                                                                     | Description                                         |
+| ------------------------------------------------------------------------ | --------------------------------------------------- |
+| `<sample>.cell_stats.csv`, `<sample>.cellInfo.csv`                       | Reads, coverage and methylation per cell barcode    |
+| `<sample>.dedup_stats.csv`, `<sample>.fragment_hist.csv`                 | Deduplication statistics and fragment sizes         |
+| `<sample>.mapping_stats.csv`, `<sample>.trimming_stats.csv`              | Alignment and trimming statistics                   |
+| `<sample>.tss_enrich.csv`                                                | TSS enrichment per cell (not with `skip_tss_enrich`) |
+| `<sample>.allCells.csv`                                                  | The cell metadata with the barcodes as cell names (used to restart) |
+
+## methylation_calls/: methylation calls
+
+| File                                                   | Description                                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `<sample>.<well>.cellInfo.txt`                         | CG, CH and total coverage per cell barcode                                           |
+| `parquet/<sample>.<well>.met_<context>.parquet`        | Methylation calls per cell and position, needed for `start_post_extraction` (`save_parquet`, default) |
+
+## bwameth/: alignment and deduplication
+
+| File                                                    | Description                                                                               |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `alignments/<sample>.<well>.bam`                        | Aligned reads, only with `save_bam: true`                                                 |
+| `alignments/samtools_stats/<sample>.<well>.flagstat.txt` | `samtools flagstat` of the alignments                                                    |
+| `alignments/merged/<sample>.<well>.bam`                 | Merged BAM files when starting from BAM files, only with `save_merged_bam: true`          |
+| `deduplicated/<sample>.<well>.dedup.bam`                | Deduplicated reads with cell barcodes in the read names, only with `save_dedup_bam: true` |
+| `deduplicated/logs/<sample>.<well>.cell_stats.tsv`      | Reads per cell barcode                                                                    |
+| `deduplicated/logs/<sample>.<well>.dedup_stats.tsv`     | Overall deduplication statistics                                                          |
+| `deduplicated/logs/<sample>.<well>.fragment_hist.tsv`   | Fragment size histogram                                                                   |
+
+## cutadapt/: read QC and trimming
+
+| File                                    | Description                                                                                                                                  |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fastqc/*.html`                         | [FastQC](https://github.com/s-andrews/FastQC) report for each input fastq file (prefixed with `<libName>.<n>_` when file names are repeated) |
+| `logs/<sample>.<well>.trim_stats.json`  | Trimming statistics (all sequencing runs of the library combined)                                                                            |
+| `logs/<sample>.<well>.trim_log`         | cutadapt report                                                                                                                              |
+| `<sample>.<well>_R{1,2}.fq.gz`          | Trimmed fastq files, only with `save_trimmed`                                                                                                |
+
+## bc_parser/: demultiplexing
 
 | File                                               | Description                                                                                                              |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `<libName>.metrics.json`                           | Barcode statistics of the whole library (merged over all demultiplexing jobs); see [Barcode metrics](barcode-metrics.md) |
 | `<libName>.<n>.demux/metrics.json`                 | Barcode statistics of one demultiplexing job (one set of input fastq files)                                              |
 | `<libName>.<n>.demux/barcode_counts.<barcode>.tsv` | Reads per barcode (one file per barcode in the library structure, e.g. `i7`, `i5`, `tgmt`)                               |
-| `<libName>.<n>.demux/*.fastq.gz`                   | Demultiplexed sample fastq files, only with `save_demux_fastq: true`                                                            |
-
-## fastq/: read QC and trimming
-
-| File                                                   | Description                                                                                                                                 |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fastqc/*.html`                                        | [FastQC](https://github.com/s-andrews/FastQC) report for each input fastq file (prefixed with `<libName>.<n>_` when file names are repeated) |
-| `trim/<sample>.<well>/<sample>.<well>.trim_stats.json` | Trimming statistics (all sequencing runs of the library combined)                                                                           |
-| `trim/*/*.fq.gz`                                       | Trimmed fastq files, only with `save_trimmed`                                                                                                   |
+| `<libName>.<n>.demux/*.fastq.gz`                   | Demultiplexed sample fastq files, only with `save_demux_fastq: true`                                                     |
 
 ## multiqc/: MultiQC report
 
-| File                  | Description                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| File                  | Description                                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `multiqc_report.html` | [MultiQC](https://multiqc.info) report of FastQC (per input fastq file), cutadapt and samtools flagstat (per sample and Tn5 well) |
-| `multiqc_data/`       | The data of the report as text files                                                                                     |
+| `multiqc_data/`       | The data of the report as text files                                                                                               |
 
-Not produced with `skip_multiqc`. The per-cell QC is in the sample and library reports (`report/`).
+Not produced with `skip_multiqc`. The per-cell QC is in the sample and library reports (`reports/`).
 
-## alignments/: alignment and deduplication
+## Other files
 
-| File                                                      | Description                                                                              |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `bam/<sample>.<well>/<sample>.<well>.bam`                 | Aligned reads, only with `save_bam: true`                                                 |
-| `dedup/<sample>.<well>/<sample>.<well>.dedup.bam`         | Deduplicated reads with cell barcodes in the read names, only with `save_dedup_bam: true` |
-| `dedup/<sample>.<well>/<sample>.<well>.cell_stats.tsv`    | Reads per cell barcode                                                                   |
-| `dedup/<sample>.<well>/<sample>.<well>.cellInfo.txt`      | CG, CH and total coverage per cell barcode                                               |
-| `dedup/<sample>.<well>/<sample>.<well>.dedup_stats.tsv`   | Overall deduplication statistics                                                         |
-| `dedup/<sample>.<well>/<sample>.<well>.fragment_hist.tsv` | Fragment size histogram                                                                  |
-
-## Other folders
-
-| Folder / file            | Description                                                                 |
-| ------------------------ | --------------------------------------------------------------------------- |
-| `matrix_generation/`     | Per-well methylation calls (`.parquet`), needed for `start_post_extraction` |
-| `metrics_for_reporting/` | Per-sample metrics, needed for `reporting_only`                             |
-| `bamMerge/`              | Merged BAM files when starting from BAM files with `save_merged_bam: true`    |
-| `samples.csv`            | The sample table as used by the run (with defaults filled in)               |
-| `workflow_info.json`     | Command, parameters, reference and version of the run                       |
-| `pipeline_info/`         | Nextflow execution report, timeline, trace and DAG, the parameters (`params_*.json`) and the software versions (`scalemethyltobi_software_versions.yml`) |
+| Folder / file        | Description                                                                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `samples.csv`        | The sample table as used by the run (with defaults filled in)                                                                                             |
+| `workflow_info.json` | Command, parameters, reference and version of the run                                                                                                     |
+| `pipeline_info/`     | Nextflow execution report, timeline, trace and DAG, the parameters (`params_*.json`) and the software versions (`scalemethyltobi_software_versions.yml`) |
