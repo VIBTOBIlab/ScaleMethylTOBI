@@ -1,0 +1,74 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/VIBTOBIlab/scalemethyltobi/main/assets/schema_input.json",
+    "title": "VIBTOBIlab/scalemethyltobi pipeline - params.input schema",
+    "description": "Schema for samples.csv provided with params.input",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]+$",
+                "errorMessage": "Sample name must be provided and can only contain letters, digits and dashes",
+                "meta": ["id"]
+            },
+            "libName": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]+$",
+                "errorMessage": "Library name can only contain letters, digits and dashes",
+                "meta": ["lib"]
+            },
+            "barcodes": {
+                "type": "string",
+                "pattern": "^[0-9A-Za-z;\\- ]*$",
+                "errorMessage": "Barcodes must be well coordinates or ranges separated by ';', e.g. 1A01-1H12;2A01-2H12",
+                "meta": ["barcodes"]
+            },
+            "threshold": {
+                "type": "integer",
+                "minimum": 0,
+                "errorMessage": "Threshold must be a positive integer (unique reads per cell)",
+                "meta": ["threshold"]
+            },
+            "resultDir": {
+                "type": "string",
+                "errorMessage": "Output directory of a previous run (used with --merged)",
+                "meta": ["result_dir"]
+            },
+            "split": {
+                "type": "string",
+                "pattern": "^(true|false)?$",
+                "errorMessage": "split must be true or false",
+                "meta": ["split"]
+            },
+            "fastq_1": {
+                "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "errorMessage": "Read 1 fastq file (genomic read): path without spaces ending in '.fastq.gz' or '.fq.gz'; relative paths are relative to the samplesheet"
+            },
+            "fastq_2": {
+                "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "errorMessage": "Read 2 fastq file (Tn5 barcode and genomic read): path without spaces ending in '.fastq.gz' or '.fq.gz'; relative paths are relative to the samplesheet"
+            },
+            "index_1": {
+                "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "errorMessage": "Index 1 (i7) fastq file: path without spaces ending in '.fastq.gz' or '.fq.gz'; relative paths are relative to the samplesheet"
+            },
+            "index_2": {
+                "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "errorMessage": "Index 2 (i5) fastq file: path without spaces ending in '.fastq.gz' or '.fq.gz'; relative paths are relative to the samplesheet"
+            }
+        },
+        "required": ["sample", "libName"],
+        "dependentRequired": {
+            "fastq_1": ["fastq_2", "index_1"],
+            "fastq_2": ["fastq_1"],
+            "index_1": ["fastq_1"],
+            "index_2": ["fastq_1"]
+        }
+    }
+}

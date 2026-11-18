@@ -8,7 +8,6 @@ import pyarrow.parquet as pq
 import numpy as np
 from collections import defaultdict
 import polars as pl
-import re
 from pathlib import Path
 import duckdb
 import argparse
@@ -60,76 +59,6 @@ def write_batch(
         .sort("pos")
     )
     writer.write_table(batch.to_arrow())
-
-
-def write_chr_parquet_bsbolt(bam: Path, chr: str, sample: str, threshold: float):
-    """
-    Write methylation calls to a Parquet file for a single chromosome
-    """
-    with pysam.AlignmentFile(bam, "rb") as samfile:
-        high_ch_reads = defaultdict(int)
-        schema = [
-            ("qname", pl.String),
-            ("pos", pl.UInt32),
-            ("strand", pl.String),
-            ("xb", pl.String),
-        ]
-        df = pl.DataFrame({}, schema=schema)
-        calls = {"qname": [], "pos": [], "strand": [], "xb": []}
-        pa_schema = pa.schema(
-            [
-                ("barcode", pa.large_string()),  # Polars uses large_string
-                ("chr", pa.large_string()),
-                ("pos", pa.uint32()),
-                ("strand", pa.large_string()),
-                ("context", pa.large_string()),
-                ("methylated", pa.uint32()),
-                ("unmethylated", pa.uint32()),
-            ]
-        )
-        with pq.ParquetWriter(f"{sample}.RNAME_{chr}.parquet", pa_schema) as writer:
-            reads = samfile.fetch(region=chr)
-            num_reads = 0
-            for read in reads:
-                num_reads += 1
-                if not read.has_tag("XB"):
-                    continue  # skip reads without XB tag
-                calls_idx = []
-                ch_count = 0
-                xb = read.get_tag("XB")
-                if xb.isnumeric():
-                    continue  # skip reads without methylation calls
-                ch_count = xb.count("Y") + xb.count("Z")
-                total_ch_count = xb.count("y") + xb.count("z") + ch_count
-                if total_ch_count > 0 and (ch_count / total_ch_count) > threshold:
-                    high_ch_reads[read.qname.split(":")[-1]] += 1
-                    continue  # skip reads with CH methylation greater than threshold
-                xb = re.findall(r"[xyzXYZ]|\d+", xb)
-                aligned_pairs = dict(read.get_aligned_pairs())
-                softClippedNumber = read.query_alignment_start
-                # pos_offset is the offset to the aligned xb tag positions in the read, this is used to map the XB tags to the correct index in alignedpairs to be set in calls
-                # Softclipped reads' xb tags don't align with the start of the read properly, you need to add the number of soft-clipped bases to the offset to get the correct position.
-                pos_offset = (
-                    np.array([1 if not char.isnumeric() else int(char) for char in xb]).cumsum() + softClippedNumber
-                )
-                calls_idx = [i for i in range(len(xb)) if not xb[i].isnumeric()]
-                for idx in calls_idx:
-                    calls["qname"].append(read.qname)
-                    calls["pos"].append(aligned_pairs[pos_offset[idx] - 1])
-                    calls["strand"].append(
-                        {"C": "-", "W": "+"}[read.get_tag("YS")[0] if read.has_tag("YS") else "W"]
-                    )  # YS tag identifies mapping strand
-                    calls["xb"].append(xb[idx])
-
-                if (num_reads % BATCH_SIZE) == 0:
-                    df = df.extend(pl.DataFrame(calls, schema=schema))
-                    write_batch(df, chr, pa_schema.names, writer, read.pos)
-                    df = df.filter(pl.col("pos") >= read.pos)  # process in next batch
-                    calls = {"qname": [], "pos": [], "strand": [], "xb": []}
-
-            df = df.extend(pl.DataFrame(calls, schema=schema))
-            write_batch(df, chr, pa_schema.names, writer)
-        return high_ch_reads
 
 
 def get_methylation_context(bases: str, meth_status: bool, reverse: bool) -> str:
@@ -371,12 +300,12 @@ def generate_cell_info_db_prompt(sample, contexts):
     return cellInfoDBPrompt
 
 
-def met_extract(bam: Path, sample: str, threshold: float, nproc: int, contexts: list, aligner: str, ref: Path):
+def met_extract(bam: Path, sample: str, threshold: float, nproc: int, contexts: list, ref: Path):
     """
-    Process dedup BAM file aligned by bsbolt to extract methylation calls
+    Process dedup BAM file aligned by bwa-meth to extract methylation calls
     to context-specific Parquet files.
 
-    Take XB tag from bsbolt alignment output and extract the methylation
+    Compare the reads with the reference genome to extract the methylation
     calls creating a record in the Parquet file for each barcode, chromosome,
     position, and count of reads with methylated and unmethylated calls.
 
@@ -386,7 +315,6 @@ def met_extract(bam: Path, sample: str, threshold: float, nproc: int, contexts: 
         threshold: Discard reads with CH methylation greater than threshold
         nproc: Number of subprocesses to use for parallel processing
         contexts: List of contexts to extract
-        aligner: Aligner used to generate the BAM file
         ref: Path to reference genome
     """
     pysam.index(bam.as_posix())  # str argument required by pysam
@@ -395,14 +323,9 @@ def met_extract(bam: Path, sample: str, threshold: float, nproc: int, contexts: 
         chrs = [stat.contig for stat in samfile.get_index_statistics() if stat.total > 0]
 
     with Pool(nproc) as p:
-        if aligner == "bsbolt":
-            chr_high_ch_reads = p.starmap(
-                write_chr_parquet_bsbolt, zip(repeat(bam), chrs, repeat(sample), repeat(threshold))
-            )
-        elif aligner == "bwa-meth" or aligner == "parabricks":
-            chr_high_ch_reads = p.starmap(
-                write_chr_parquet_bwa_meth, zip(repeat(bam), chrs, repeat(sample), repeat(threshold), repeat(ref))
-            )
+        chr_high_ch_reads = p.starmap(
+            write_chr_parquet_bwa_meth, zip(repeat(bam), chrs, repeat(sample), repeat(threshold), repeat(ref))
+        )
 
     # create CG and CH context met calls parquet file
     # by combining all chromosome-specific parquet files
@@ -426,7 +349,7 @@ def met_extract(bam: Path, sample: str, threshold: float, nproc: int, contexts: 
                 read_parquet({chr_pqs})
             WHERE
                 context = '{context}'
-                
+
         )
         TO '{f"{sample}.met_{context}.parquet"}' (COMPRESSION ZSTD);
         """
@@ -444,7 +367,7 @@ def met_extract(bam: Path, sample: str, threshold: float, nproc: int, contexts: 
         FROM
             '{f"{sample}.met_{context}.parquet"}'
         GROUP BY
-            barcode) 
+            barcode)
         TO '{f"{sample2}_cellInfo_{context}.parquet"}';
         """
         )
@@ -488,11 +411,10 @@ def main():
         help="Comma-separated list of contexts to extract",
         default="CG,CH",
     )
-    parser.add_argument("--aligner", type=str, help="Aligner used to generate the BAM file", default="bwa-meth")
     parser.add_argument("--ref", type=Path, help="Path to reference genome")
     args = parser.parse_args()
     met_extract(
-        args.bam, args.sample, args.threshold, args.subprocesses, args.contexts.split(","), args.aligner, args.ref
+        args.bam, args.sample, args.threshold, args.subprocesses, args.contexts.split(","), args.ref
     )
 
 

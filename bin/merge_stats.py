@@ -3,7 +3,6 @@ import argparse
 import glob
 import sys
 import os
-import re
 import json
 import pandas as pd
 from pathlib import Path
@@ -40,7 +39,7 @@ def accept_args() -> argparse.Namespace:
         "--mappingStatsPath",
         default=".",
         type=Path,
-        help="Path to directory with log files containing bsbolt output",
+        help="Path to directory with samtools flagstat logs of the bwa-meth alignments",
     )
     parser.add_argument(
         "--trimmingStatsPath",
@@ -53,13 +52,6 @@ def accept_args() -> argparse.Namespace:
         default=".",
         type=Path,
         help="Path to directory containing dedup_stats.tsv files",
-    )
-    parser.add_argument(
-        "--aligner",
-        default="bsbolt",
-        choices=["bsbolt", "bwa-meth", "parabricks"],
-        type=str,
-        help="Aligner used for mapping. Options: bsbolt, bwa_meth, parabricks",
     )
     parser.add_argument("--outDir", default=".", type=Path, help="Path to write concatenated files to")
     args = parser.parse_args()
@@ -153,43 +145,6 @@ def concat_cellinfo(sampleName: str, outDir: Path, cellInfoPath: Path):
                 outfile.write(("\n".join(filtered_contents)).replace("\t", ","))
 
 
-def build_mapping_stats_bsbolt(sampleName: str, outDir: Path, mappingStatsPath: Path):
-    """
-    Build mapping stats from the bsbolt log files
-    """
-
-    suffix = "*bsbolt.log"
-    fullPath = os.path.join(mappingStatsPath, sampleName + suffix)
-    filenamesList = glob.glob(fullPath)
-    if filenamesList == []:
-        print("No logs found for bsbolt(mapping)", file=sys.stderr)
-        return
-    total_reads = []
-    unaligned_reads = []
-    for file in filenamesList:
-        with open(file) as fh:
-            for line in fh:
-                if line.startswith("TotalAlignments:"):
-                    count = int(re.sub("TotalAlignments: |\n", "", line))
-                    total_reads.append(count)
-                if line.startswith("Unaligned:"):
-                    count = int(re.sub("Unaligned: |\n", "", line))
-                    unaligned_reads.append(count)
-    mapping_report = pd.DataFrame.from_dict(
-        {
-            "Metric": ["total_reads", "unaligned_reads", "mapped_reads", "mapped_percent"],
-            "Value": [
-                int(sum(total_reads)),
-                int(sum(unaligned_reads)),
-                int(sum(total_reads) - sum(unaligned_reads)),
-                round(((sum(total_reads) - sum(unaligned_reads)) / sum(total_reads) * 100), 2),
-            ],
-        },
-        dtype="object",
-    )
-    mapping_report.to_csv(f"{outDir}/{sampleName}.mapping_stats.csv", index=False)
-
-
 def build_mapping_stats_bwa(sampleName: str, outDir: Path, mappingStatsPath: Path):
     """
     Build mapping stats from the bwa_meth log files
@@ -269,10 +224,7 @@ def main():
     concat_fragment_histogram(args.sampleName, args.outDir, args.fragmentHistPath)
     concat_cellinfo(args.sampleName, args.outDir, args.cellInfoPath)
 
-    if args.aligner == "bsbolt":
-        build_mapping_stats_bsbolt(args.sampleName, args.outDir, args.mappingStatsPath)
-    elif args.aligner == "bwa-meth" or args.aligner == "parabricks":
-        build_mapping_stats_bwa(args.sampleName, args.outDir, args.mappingStatsPath)
+    build_mapping_stats_bwa(args.sampleName, args.outDir, args.mappingStatsPath)
     build_trimming_stats(args.sampleName, args.outDir, args.trimmingStatsPath)
 
 

@@ -1,0 +1,99 @@
+nextflow_function {
+
+    name "Test Functions readSamplesheet"
+    script "../main.nf"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_scalemethyltobi_pipeline"
+
+    test("Test samplesheet: sample table, defaults and one fastq set") {
+        function "readSamplesheet"
+        when {
+            function {
+                """
+                input[0] = file("${projectDir}/tests/data/samples.csv")
+                input[1] = file("${projectDir}/references/lib.json")
+                """
+            }
+        }
+        then {
+            def result = function.result
+            assertAll(
+                { assert function.success },
+                { assert result.csv == "sample,barcodes,libName,split\nSampleA,1A01-1A03,ScaleMethyl,true\nSampleB,1A07-1A09,ScaleMethyl,true\n" },
+                // Both samples are in the same fastq files: one fastq set
+                { assert result.fastq_sets.size() == 1 },
+                { assert result.fastq_sets[0][0].id == "ScaleMethyl.0" },
+                { assert result.samples.collect { it.sample } == ["SampleA", "SampleB"] }
+            )
+        }
+    }
+
+    test("Two sequencing runs and default barcodes") {
+        function "readSamplesheet"
+        when {
+            function {
+                """
+                def fq = "${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001"
+                def run2 = file("${workDir}/run2")
+                run2.mkdirs()
+                ['R1', 'R2', 'I1', 'I2'].each { r -> file("\${fq}_\${r}_001.fastq.gz").copyTo(run2.resolve("ScaleMethyl_S1_L001_\${r}_001.fastq.gz")) }
+                def sheet = file("${workDir}/two_runs.csv")
+                sheet.text = "sample,libName,fastq_1,fastq_2,index_1,index_2\\n" +
+                    "SampleA,ScaleMethyl,\${fq}_R1_001.fastq.gz,\${fq}_R2_001.fastq.gz,\${fq}_I1_001.fastq.gz,\${fq}_I2_001.fastq.gz\\n" +
+                    "SampleA,ScaleMethyl,run2/ScaleMethyl_S1_L001_R1_001.fastq.gz,run2/ScaleMethyl_S1_L001_R2_001.fastq.gz,run2/ScaleMethyl_S1_L001_I1_001.fastq.gz,run2/ScaleMethyl_S1_L001_I2_001.fastq.gz\\n"
+                input[0] = sheet
+                input[1] = file("${projectDir}/references/lib.json")
+                """
+            }
+        }
+        then {
+            def result = function.result
+            assertAll(
+                { assert function.success },
+                // The sample is listed once, with all Tn5 wells of the library structure
+                { assert result.csv == "sample,libName,barcodes,split\nSampleA,ScaleMethyl,1A01-3H12,true\n" },
+                // Two fastq sets; the repeated file names get a unique FastQC name
+                { assert result.fastq_sets.collect { it[0].id } == ["ScaleMethyl.0", "ScaleMethyl.1"] },
+                { assert result.fastq_sets[1][0].fastqc_ids[0] == "ScaleMethyl.1_ScaleMethyl_S1_L001_R1_001.fastq.gz" }
+            )
+        }
+    }
+
+    test("Rejects rows of the same sample with different settings") {
+        function "readSamplesheet"
+        when {
+            function {
+                """
+                def sheet = file("${workDir}/conflict.csv")
+                sheet.text = "sample,barcodes,libName\\nSampleA,1A01-1A03,ScaleMethyl\\nSampleA,1A01-1A04,ScaleMethyl\\n"
+                input[0] = sheet
+                input[1] = file("${projectDir}/references/lib.json")
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { it.contains("Duplicate sample/lib name combination with different settings") } }
+            )
+        }
+    }
+
+    test("Rejects invalid sample names") {
+        function "readSamplesheet"
+        when {
+            function {
+                """
+                def sheet = file("${workDir}/bad_name.csv")
+                sheet.text = "sample,barcodes,libName\\nSample_A,1A01-1A03,ScaleMethyl\\n"
+                input[0] = sheet
+                input[1] = file("${projectDir}/references/lib.json")
+                """
+            }
+        }
+        then {
+            assert function.failed
+        }
+    }
+}

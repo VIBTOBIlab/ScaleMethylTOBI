@@ -4,8 +4,8 @@ Barcode lists, library structures and helper scripts for sciMETv3 (Nichols et al
 
 | File | Description |
 |---|---|
-| `lib.json` | Library structure for the paper's i5 PCR primers (Table S1B/S1C): `libStructure: "sciMETv3/lib.json"` |
-| `lib_D50x.json` | Library structure for TruSeq HT D501-D508 i5 primers (8 bp): `libStructure: "sciMETv3/lib_D50x.json"` |
+| `lib.json` | Library structure for the paper's i5 PCR primers (Table S1B/S1C): `lib_structure: "sciMETv3/lib.json"` |
+| `lib_D50x.json` | Library structure for TruSeq HT D501-D508 i5 primers (8 bp): `lib_structure: "sciMETv3/lib_D50x.json"` |
 | `lig_i7.txt` | 96 ligation barcodes, read by Index 1 |
 | `pcr_i5.txt` | 192 i5 barcodes of the paper's two primer plates (A01-H12, I01-P12), read by Index 2 |
 | `pcr_i5_D50x.txt` | 8 TruSeq HT D501-D508 i5 barcodes (D01-D08) |
@@ -20,4 +20,4 @@ All barcode lists hold the sequence as it appears in the fastq files (Index 2 fo
 Quick checks:
 
     python3 check_barcode_orientation.py lib_D50x.json --I1 x_I1.fastq.gz --I2 x_I2.fastq.gz --R2 x_R2.fastq.gz
-    python3 rename_amethyst_cells.py <outDir>/samples <outDir>/samples_renamed
+    python3 rename_amethyst_cells.py <outdir>/samples <outdir>/samples_renamed

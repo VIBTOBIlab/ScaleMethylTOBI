@@ -1,0 +1,152 @@
+{
+    "Splits synthetic reads by sample and Tn5 well": {
+        "content": [
+            [
+                "SampleA_1A01_S1_R1_000.fastq.gz",
+                "SampleA_1A02_S1_R1_000.fastq.gz",
+                "SampleA_1A03_S1_R1_000.fastq.gz",
+                "SampleB_1A07_S2_R1_000.fastq.gz",
+                "SampleB_1A08_S2_R1_000.fastq.gz",
+                "SampleB_1A09_S2_R1_000.fastq.gz"
+            ],
+            {
+                "barcodes": {
+                    "i5": {
+                        "Exact": [
+                            3690,
+                            "100.0%"
+                        ],
+                        "Corrected": [
+                            0,
+                            "0.0%"
+                        ],
+                        "Ambiguous": [
+                            0,
+                            "0.0%"
+                        ],
+                        "NoMatch": [
+                            0,
+                            "0.0%"
+                        ]
+                    },
+                    "i7": {
+                        "Exact": [
+                            3690,
+                            "100.0%"
+                        ],
+                        "Corrected": [
+                            0,
+                            "0.0%"
+                        ],
+                        "Ambiguous": [
+                            0,
+                            "0.0%"
+                        ],
+                        "NoMatch": [
+                            0,
+                            "0.0%"
+                        ]
+                    },
+                    "tgmt": {
+                        "Exact": [
+                            3690,
+                            "100.0%"
+                        ],
+                        "Corrected": [
+                            0,
+                            "0.0%"
+                        ],
+                        "Ambiguous": [
+                            0,
+                            "0.0%"
+                        ],
+                        "NoMatch": [
+                            0,
+                            "0.0%"
+                        ]
+                    }
+                },
+                "reads": {
+                    "Pass": [
+                        3690,
+                        "100.0%"
+                    ],
+                    "BarcodeError": [
+                        0,
+                        "0.0%"
+                    ],
+                    "LinkerError": [
+                        0,
+                        "0.0%"
+                    ],
+                    "TooShortError": [
+                        0,
+                        "0.0%"
+                    ]
+                },
+                "samples": {
+                    "Unknown": {
+                        "name": "Unknown",
+                        "number": 0,
+                        "reads": [
+                            0,
+                            "0.0%"
+                        ],
+                        "barcodes": {
+                            
+                        }
+                    },
+                    "SampleA": {
+                        "name": "SampleA",
+                        "number": 1,
+                        "reads": [
+                            1842,
+                            "49.9%"
+                        ],
+                        "barcodes": {
+                            "1A01": {
+                                "sequence": "GAACCGCG",
+                                "reads": 912
+                            },
+                            "1A02": {
+                                "sequence": "AGGTTATA",
+                                "reads": 918
+                            },
+                            "1A03": {
+                                "sequence": "TCATCCTT",
+                                "reads": 12
+                            }
+                        }
+                    },
+                    "SampleB": {
+                        "name": "SampleB",
+                        "number": 2,
+                        "reads": [
+                            1848,
+                            "50.1%"
+                        ],
+                        "barcodes": {
+                            "1A07": {
+                                "sequence": "GTGAATAT",
+                                "reads": 609
+                            },
+                            "1A08": {
+                                "sequence": "ACAGGCGC",
+                                "reads": 612
+                            },
+                            "1A09": {
+                                "sequence": "CATAGAGT",
+                                "reads": 627
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "timestamp": "2026-11-17T14:09:47.491965",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "24.04.4"
+        }
+    }
+}

@@ -1,0 +1,25 @@
+email_template.html
+.nextflow*
+work/
+data/
+results/
+.DS_Store
+testing/
+testing*
+*.pyc
+bin/
+.nf-test/
+ro-crate-metadata.json
+modules/nf-core/
+subworkflows/nf-core/
+# Data files read by the pipeline
+references/
+tests/data/
+docs/examples/
+# MkDocs build output
+site/
+# MkDocs pages: prettier removes the indentation of admonitions (!!! note) and content tabs (===)
+docs/*/
+# ScaleBio license text and container definition (kept as distributed)
+LICENSE.md
+envs/

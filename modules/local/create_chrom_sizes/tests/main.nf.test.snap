@@ -1,0 +1,33 @@
+{
+    "Chromosome sizes from fasta": {
+        "content": [
+            {
+                "0": [
+                    "chrom.sizes:md5,8b03eb5e8c534af70c07edd9fba644e2"
+                ],
+                "1": [
+                    [
+                        "CREATE_CHROM_SIZES",
+                        "python",
+                        "3.10.12"
+                    ]
+                ],
+                "chrom_sizes": [
+                    "chrom.sizes:md5,8b03eb5e8c534af70c07edd9fba644e2"
+                ],
+                "versions_python": [
+                    [
+                        "CREATE_CHROM_SIZES",
+                        "python",
+                        "3.10.12"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-17T15:25:43.32122",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.6"
+        }
+    }
+}

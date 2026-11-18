@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="640" viewBox="0 0 1560 640" font-family="Helvetica, Arial, sans-serif">
+<rect width="1560" height="640" fill="#ffffff"/>
+<text x="40" y="52" font-size="30" font-weight="bold" fill="#1B2631">VIBTOBIlab/scalemethyltobi</text>
+<text x="40" y="82" font-size="17" fill="#566573">Single-cell DNA methylation (ScaleBio kits, sciMETv3)</text>
+<path d="M 110,300 L 180,300 L 230,420 L 640,420" fill="none" stroke="#E67E22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 450,300 L 450,420" fill="none" stroke="#E67E22" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 13"/>
+<path d="M 600,300 L 600,420" fill="none" stroke="#E67E22" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 13"/>
+<path d="M 110,300 L 1110,300" fill="none" stroke="#2E86C1" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 1110,300 L 1180,190 L 1260,190 L 1430,190" fill="none" stroke="#8E44AD" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 1110,300 L 1180,410 L 1260,410 L 1430,410" fill="none" stroke="#27AE60" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 750,540 L 750,300" fill="none" stroke="#C0392B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+<path d="M 1050,540 L 1050,300" fill="none" stroke="#C0392B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+<path d="M 1260,540 L 1260,410" fill="none" stroke="#C0392B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+<rect x="56.75" y="283" width="106.5" height="34" rx="17" fill="#2E86C1"/>
+<text x="110" y="306" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">samplesheet</text>
+<circle cx="300" cy="420" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="300" y="462" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">FastQC</text>
+<text x="300" y="482" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">read QC</text>
+<rect x="633.75" y="403" width="72.5" height="34" rx="17" fill="#E67E22"/>
+<text x="670" y="426" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">MultiQC</text>
+<circle cx="300" cy="300" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="300" y="250" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Demultiplex</text>
+<text x="300" y="270" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">bc_parser, per run</text>
+<circle cx="450" cy="300" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="450" y="250" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Trim</text>
+<text x="450" y="270" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">runs combined</text>
+<circle cx="600" cy="300" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="600" y="250" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Align</text>
+<text x="600" y="270" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">bwa-meth</text>
+<circle cx="750" cy="300" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="750" y="250" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Deduplicate</text>
+<text x="750" y="270" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">sc_dedup</text>
+<circle cx="900" cy="300" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="900" y="250" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Methylation calls</text>
+<text x="900" y="270" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">met_extract</text>
+<circle cx="1050" cy="300" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="1050" y="250" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Cell calling</text>
+<text x="1050" y="270" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">cell metrics</text>
+<circle cx="1260" cy="190" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="1260" y="140" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">TSS enrichment</text>
+<text x="1260" y="160" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">tss_enrich</text>
+<rect x="1382.5" y="173" width="115.0" height="34" rx="17" fill="#8E44AD"/>
+<text x="1440" y="196" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">html reports</text>
+<circle cx="1260" cy="410" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
+<text x="1260" y="360" font-size="16" font-weight="bold" fill="#1B2631" text-anchor="middle">Genome-bin matrices</text>
+<text x="1260" y="380" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">CG / CH .mtx</text>
+<rect x="1374.0" y="393" width="132.0" height="34" rx="17" fill="#27AE60"/>
+<text x="1440" y="416" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">.cov .allc .h5</text>
+<text x="750" y="568" font-size="14" font-family="Menlo, Consolas, monospace" fill="#C0392B" text-anchor="middle">--bam1_dir / --bam2_dir</text>
+<text x="1050" y="568" font-size="14" font-family="Menlo, Consolas, monospace" fill="#C0392B" text-anchor="middle">--reporting_only</text>
+<text x="1260" y="568" font-size="14" font-family="Menlo, Consolas, monospace" fill="#C0392B" text-anchor="middle">--start_post_extraction</text>
+<path d="M 40,610 L 86,610" fill="none" stroke="#2E86C1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="98" y="615" font-size="14" fill="#1B2631">Main workflow</text>
+<path d="M 239,610 L 285,610" fill="none" stroke="#E67E22" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="297" y="615" font-size="14" fill="#1B2631">QC summary</text>
+<path d="M 414,610 L 460,610" fill="none" stroke="#8E44AD" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="472" y="615" font-size="14" fill="#1B2631">Reports</text>
+<path d="M 565,610 L 611,610" fill="none" stroke="#27AE60" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="623" y="615" font-size="14" fill="#1B2631">Matrices and coverage files</text>
+<path d="M 876,610 L 922,610" fill="none" stroke="#C0392B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+<text x="934" y="615" font-size="14" fill="#1B2631">Restart from a previous run</text>
+</svg>

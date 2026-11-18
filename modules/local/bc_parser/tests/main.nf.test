@@ -1,0 +1,41 @@
+nextflow_process {
+
+    name "Test Process BC_PARSER"
+    script "../main.nf"
+    process "BC_PARSER"
+    tag "modules"
+    tag "modules_local"
+    tag "bc_parser"
+
+    test("Splits synthetic reads by sample and Tn5 well") {
+        when {
+            process {
+                """
+                input[0] = "sample,barcodes,libName,split\\nSampleA,1A01-1A03,ScaleMethyl,true\\nSampleB,1A07-1A09,ScaleMethyl,true\\n"
+                input[1] = file("${projectDir}/references")
+                input[2] = "lib.json"
+                input[3] = channel.of([
+                    [id: "ScaleMethyl.0", lib: "ScaleMethyl", fastq_num: 0],
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_R1_001.fastq.gz"),
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_R2_001.fastq.gz"),
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_I1_001.fastq.gz"),
+                    file("${projectDir}/tests/data/fastq/ScaleMethyl_S1_L001_I2_001.fastq.gz")
+                ])
+                """
+            }
+        }
+        then {
+            def metrics = path(process.out.metrics[0][1]).json
+            assertAll(
+                { assert process.success },
+                // One R1 file per sample and Tn5 well (3 wells per sample)
+                { assert process.out.read1_fastq[0][1].size() == 6 },
+                { assert process.out.read2_fastq[0][1].size() == 6 },
+                { assert snapshot(
+                    process.out.read1_fastq[0][1].collect { file(it).name }.sort(),
+                    metrics
+                ).match() }
+            )
+        }
+    }
+}

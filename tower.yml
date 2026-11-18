@@ -1,11 +1,11 @@
 reports:
-    "library.*.report.html":
-        display: "Library QC Summary Report"
-    "**/*.report.html":
-        display: "Sample QC Summary Report"
-    "library.*.combinedPassingCellStats.csv":
-        display: "Combined Passing Cell Statistics"
-    "fastq/Reports/Demultiplex_Stats.csv":
-        display: "bcl-convert demux stats"
-    "fastq/Reports/Top_Unknown_Barcodes.csv":
-        display: "bcl-convert top unknown barcodes stats"
+  "reports/libraries/**/*.report.html":
+    display: "Library QC Summary Report"
+  "reports/samples/**/*.report.html":
+    display: "Sample QC Summary Report"
+  "reports/libraries/**/*.combinedPassingCellStats.csv":
+    display: "Combined Passing Cell Statistics"
+  "multiqc/multiqc_report.html":
+    display: "MultiQC report (read QC, trimming, alignment)"
+  "samples.csv":
+    display: "Regularized sample table"

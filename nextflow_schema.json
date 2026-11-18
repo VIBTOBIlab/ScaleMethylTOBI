@@ -1,241 +1,501 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/ScaleBio/nf_methyl/add_result_merging/nextflow_schema.json",
-    "title": "ScaleBio Methylation pipeline parameters",
-    "description": "See Readme.md for further documentation.",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/VIBTOBIlab/scalemethyltobi/main/nextflow_schema.json",
+    "title": "VIBTOBIlab/scalemethyltobi pipeline parameters",
+    "description": "ScaleBio single-cell DNA methylation analysis workflow",
     "type": "object",
-    "definitions": {
-        "help_options":{
-            "title":"Help options",
-            "type":"object",
-            "fa_icon": "fas fa-terminal",
-            "properties": {
-                "help": {
-                    "type":"boolean",
-                    "description":"Print params description to console?",
-                    "hidden":true
-                },
-                "show_hidden_params":{
-                    "type":"boolean",
-                    "description":"Show parameters marked as hidden when invoking --help?",
-                    "hidden":true
-                }
-            }
-        },
-        "input_options": {
-            "title": "Input options",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
             "type": "object",
             "fa_icon": "fas fa-terminal",
-            "description": "Define analysis input data.",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "required": ["input", "outdir"],
             "properties": {
-                "samples": {
+                "input": {
                     "type": "string",
                     "format": "file-path",
+                    "exists": true,
+                    "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Csv file describing all samples in the analysis run (required!)",
+                    "description": "Samplesheet: the samples with their Tn5 barcodes and the fastq files of their libraries.",
+                    "help_text": "Comma-separated file with a header row. Required columns: `sample` and `libName`. Fastq columns: `fastq_1` (R1), `fastq_2` (R2), `index_1` (I1) and `index_2` (I2) of the library; give them in at least one row per library and add rows for more sequencing runs. Optional columns: `barcodes`, `threshold`, `resultDir`. Relative fastq paths are relative to the samplesheet. See docs/user-guide/samples-csv.md.",
                     "fa_icon": "fas fa-file-csv"
                 },
-                "fastqSamplesheet": {
-                  "type": "string",
-                  "format": "file-path",
-                  "mimetype": "text/csv",
-                  "pattern": "^\\S+\\.csv$",
-                  "description": "Csv file for bcl-convert",
-                  "fa_icon": "fas fa-file-csv"
+                "lib_structure": {
+                    "type": "string",
+                    "default": "lib.json",
+                    "description": "Library structure definition (.json); absolute path or relative to the references/ directory of the pipeline.",
+                    "help_text": "The default `lib.json` matches the ScaleBio Single-cell Methylation kit v1.0 and v1.1.",
+                    "fa_icon": "fas fa-dna"
                 },
-                "runFolder": {
+                "outdir": {
                     "type": "string",
-                    "description": "Top-level sequencer run directory (or null when using fastq input)",
-                    "format": "directory-path"
+                    "format": "directory-path",
+                    "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+                    "fa_icon": "fas fa-folder-open",
+                    "default": "ScaleMethyl.out"
                 },
-                "fastqDir": {
+                "email": {
                     "type": "string",
-                    "description":"Directory containing pre-generated FASTQs files (or null when using runFolder input)",
-                    "format": "directory-path"
+                    "description": "Email address for completion summary.",
+                    "fa_icon": "fas fa-envelope",
+                    "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
                 }
-            },
-            "required": [
-                "samples"
-            ]
-        },
-        "aligner options": {
-            "title": "Pick aligner",
-            "type": "object",
-            "fa_icon": "fas fa-terminal",
-            "description": "Define analysis input data.",
-            "properties": {
-                "aligner": {
-                    "type": "string",
-                    "description": "Aligner to use for genomic alignment",
-                    "default": "bwa-meth",
-                    "enum": [
-                        "bwa-meth",
-                        "bsbolt",
-                        "parabricks"
-                    ]
-                }
-            },
-            "required": [
-                "aligner"
-            ]
-        },
-        "output_options": {
-            "title": "Output paths and options",
-            "type": "object",
-            "fa_icon": "fas fa-terminal",
-            "properties": {
-                "outDir": {
-                    "type": "string",
-                    "description": "Name of the output directory for workflow results",
-                    "format": "directory-path"
-                }
-            },
-            "required": [
-                "outDir"
-            ]
+            }
         },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
             "fa_icon": "fas fa-dna",
-            "description": "Reference genome related files and options required for the workflow.",
+            "description": "Reference genome: a pre-built genome by name (--genome) or your own genome.json (--genome_json).",
             "properties": {
                 "genome": {
                     "type": "string",
-                    "description": "json file with paths and parameters for the reference genome (required!)",
-                    "format": "file-path",
-                    "mimetype": "text/json",
-                    "pattern": "^\\S+\\.json$"
-                }
-            }
-        },
-        "analysis_options": {
-            "title": "Analysis options",
-            "type": "object",
-            "fa_icon": "fas fa-sliders-h",
-            "description": "Configure analysis steps and options",
-            "properties": {
-                "libStructure": {
+                    "enum": ["hg38", "mm39"],
+                    "description": "Pre-built reference genome (conf/genomes.config): hg38 or mm39.",
+                    "help_text": "The ScaleBio genome archive is downloaded from --genomes_base and unpacked by the pipeline, in the work directory of the run. Give either --genome or --genome_json.",
+                    "fa_icon": "fas fa-book"
+                },
+                "genome_json": {
                     "type": "string",
                     "format": "file-path",
-                    "mimetype": "text/json",
+                    "exists": true,
                     "pattern": "^\\S+\\.json$",
-                    "description": "Json file describing library structure and index/barcode sequences",
-                    "fa_icon": "fas fa-file-json"
+                    "description": "Path to genome.json with the bwa-meth index and the genome annotation files, for genomes not in conf/genomes.config.",
+                    "help_text": "Paths in genome.json are relative to the directory of genome.json. See docs/user-guide/reference-genomes.md.",
+                    "fa_icon": "fas fa-file-code"
                 },
-                "calculateCH": {
-                    "type": "boolean",
-                    "description": "Calculate CH context methylation"
-                },
-                "fastqOut": {
-                    "type": "boolean",
-                    "description": "Publish fastq files generated by bcl convert and bcParser to output directory"
-                },
-                "splitFastq": {
-                    "type": "boolean",
-                    "description": "Enable i5 or i7 splitting for the purpose of bcl conversion"
-                },
-                "bclConvertParams": {
+                "genomes_base": {
                     "type": "string",
-                    "description": "Extra parameters to be supplied to bcl-convert"
-                },
-                "covOut": {
-                    "type": "boolean",
-                    "description": "Publish methylation extraction cov files"
-                },
-                "allcOut": {
-                    "type": "boolean",
-                    "description": "Publish ALLC files for analysis with ALLCools"
-                },
-                "amethystOut": {
-                    "type": "boolean",
-                    "description": "Publish hdf5 cov files for analysis with Amethyst"
-                },
-                "windowMatrixOut": {
-                    "type": "boolean",
-                    "description": "Generate bin methylation matrix from bed file"
-                },
-                "bamOut": {
-                    "type": "boolean",
-                    "description": "Publish bam files for all reads"
-                },
-                "bamDedupOut": {
-                    "type": "boolean",
-                    "description": "Publish deduplicated bam files"
-                },
-                "minUniqTotal": {
-                    "type": "integer",
-                    "description": "Filter for minimum unique/total reads by barcode"
-                },
-                "maxUniqTotal": {
-                    "type": "integer",
-                    "description": "Filter for maximum unique/total reads by barcode"
-                },
-                "minUniqCount": {
-                    "type": "integer",
-                    "description": "Minimum unique reads for barcode knee plot thresholding"
+                    "default": "https://s3.us-east-2.amazonaws.com/scale.pub/genomes/methyl",
+                    "description": "Location (URL) of the pre-built genome archives.",
+                    "help_text": "Change it to use a mirror of the ScaleBio archives (an http(s) URL).",
+                    "fa_icon": "fas fa-cloud-download-alt",
+                    "hidden": true
                 }
             }
         },
-        "checkpoint_options": {
-            "title": "Checkpoint options",
+        "preprocessing_options": {
+            "title": "Pre-processing options",
             "type": "object",
-            "fa_icon": "fas fa-sliders-h",
-            "description": "Provide options for checkpointing and for running only reporting. previousOutDir is required for any option in this list and only one can be set to true at a time.",
+            "fa_icon": "fas fa-cut",
+            "description": "Demultiplexing, read QC and trimming.",
             "properties": {
-                "previousOutDir": {
+                "split_fastq": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Split the demultiplexed fastq files by sample and Tn5 well for increased parallelization.",
+                    "fa_icon": "fas fa-random"
+                },
+                "skip_fastqc": {
+                    "type": "boolean",
+                    "description": "Do not run FastQC on the input fastq files.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "adapters": {
                     "type": "string",
-                    "description": "Output directory of previous run for reporting or running from a checkpoint. outDir and previousOutDir can be set to the same previous run directory to overwrite previous run outputs.",
-                    "format": "directory-path"
-                },
-                "merged": {
-                    "type": "boolean",
-                    "description": "Set to true if merging multiple runs, will use resultDir column in samples.csv (see samples.merge.csv in examples for formating) to merge previous runs together (Do not set previousOutDir and merge at the same time)."
-                },
-                "reportingOnly": {
-                    "type": "boolean",
-                    "description": "Enable to rerun only reporting(fastqDir or runFolder not required)"
-                },
-                "startPostExtraction": {
-                    "type": "boolean",
-                    "description": "Enable to start the workflow from the matrix generation step if the user wishes to include additional outputs to their run or change the binning for downstream cell clustering without needing to re-align/extract. The 'Dedup and Extract>Extract' and 'Metrics>GenerateMetrics' processes need to completely finish before this option is available for subsequent runs. (Coverage Parquet files required in output folder)"
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Adapter list used by FastQC (default: references/SciMETv2_Adapters.tsv of the pipeline).",
+                    "fa_icon": "fas fa-file"
                 }
             }
         },
-        "GPU options": {
-            "title": "GPU options",
+        "methylation_options": {
+            "title": "Deduplication and methylation extraction options",
             "type": "object",
-            "fa_icon": "fas fa-sliders-h",
-            "description": "Provide options for GPU usage.",
+            "fa_icon": "fas fa-dna",
+            "description": "Read deduplication and methylation calling.",
             "properties": {
-                "parabricksNumGpu": {
+                "dedup_key": {
+                    "type": "string",
+                    "default": "Leftmost",
+                    "description": "Duplicate key used by sc_dedup.",
+                    "fa_icon": "fas fa-key"
+                },
+                "min_mapq": {
                     "type": "integer",
-                    "description": "Number of GPU processes to use for parabricks aligner",
-                    "default": 1
+                    "default": 10,
+                    "minimum": 0,
+                    "description": "Minimum mapping quality of the reads kept by sc_dedup.",
+                    "fa_icon": "fas fa-filter"
+                },
+                "skip_ch_context": {
+                    "type": "boolean",
+                    "description": "Do not calculate CH methylation (reports, parquet files and matrices).",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "ch_reads_threshold": {
+                    "type": "number",
+                    "default": 50,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Discard reads with a percentage of methylated CH above this threshold.",
+                    "fa_icon": "fas fa-percent"
+                }
+            }
+        },
+        "cell_calling_options": {
+            "title": "Cell-calling options",
+            "type": "object",
+            "fa_icon": "fas fa-filter",
+            "description": "Options used to separate cells from background barcodes.",
+            "properties": {
+                "top_cell_percentile": {
+                    "type": "number",
+                    "default": 99,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Percentile of unique reads per barcode used as 'robust max'.",
+                    "fa_icon": "fas fa-percent"
+                },
+                "min_cell_ratio": {
+                    "type": "number",
+                    "default": 20,
+                    "minimum": 0,
+                    "description": "Ratio between the unique reads of the top cells and the cell threshold.",
+                    "fa_icon": "fas fa-divide"
+                },
+                "min_uniq_count": {
+                    "type": "integer",
+                    "default": 1000,
+                    "minimum": 0,
+                    "description": "Minimum unique reads to consider a barcode as a potential cell.",
+                    "fa_icon": "fas fa-sort-numeric-up"
+                },
+                "min_uniq_total": {
+                    "type": "number",
+                    "default": 1,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Minimum percentage of unique out of total reads of a cell.",
+                    "fa_icon": "fas fa-percent"
+                },
+                "max_uniq_total": {
+                    "type": "number",
+                    "default": 100,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Maximum percentage of unique out of total reads of a cell.",
+                    "fa_icon": "fas fa-percent"
+                },
+                "skip_tss_enrich": {
+                    "type": "boolean",
+                    "description": "Do not compute the per-cell TSS enrichment.",
+                    "fa_icon": "fas fa-fast-forward"
+                }
+            }
+        },
+        "matrix_options": {
+            "title": "Matrix generation options",
+            "type": "object",
+            "fa_icon": "fas fa-th",
+            "description": "Matrices with the methylation signal per genome bin.",
+            "properties": {
+                "skip_window_matrix": {
+                    "type": "boolean",
+                    "description": "Do not generate the matrices with the methylation signal per genome bin.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "window_tile_size_cg": {
+                    "type": "integer",
+                    "default": 50000,
+                    "minimum": 1,
+                    "description": "Bin size (bp) of the CG matrix; ignored when genomeTiles is set in genome.json.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
+                "window_tile_size_ch": {
+                    "type": "integer",
+                    "default": 100000,
+                    "minimum": 1,
+                    "description": "Bin size (bp) of the CH matrix; ignored when genomeTilesCH is set in genome.json.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
+                "minimum_window_size": {
+                    "type": "integer",
+                    "default": 200,
+                    "minimum": 0,
+                    "description": "Minimum bin size (bp) after removing blacklisted regions.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                }
+            }
+        },
+        "output_options": {
+            "title": "Skipped steps and published files",
+            "type": "object",
+            "fa_icon": "fas fa-file-export",
+            "description": "Skip optional steps and outputs, or publish intermediate files.",
+            "properties": {
+                "skip_cov": {
+                    "type": "boolean",
+                    "description": "Do not write the per-cell methylation coverage in Bismark .cov format.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "skip_allc": {
+                    "type": "boolean",
+                    "description": "Do not write the per-cell methylation coverage in .allc format (ALLCools).",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "skip_amethyst": {
+                    "type": "boolean",
+                    "description": "Do not write the per-cell methylation coverage in Amethyst hdf5 format.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "skip_cell_prefix": {
+                    "type": "boolean",
+                    "description": "Keep the barcodes as cell names in samples/ instead of <sample>_<barcode>.",
+                    "help_text": "By default the cells in samples/ (allCells.csv, the matrix barcodes and the Amethyst .h5 files) are named <sample>_<barcode>, so that the samples and libraries of a run (or of several runs) can be loaded together in Amethyst without name clashes.",
+                    "fa_icon": "fas fa-tag"
+                },
+                "save_parquet": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Methylation calls (parquet), needed to restart with --start_post_extraction.",
+                    "fa_icon": "fas fa-file"
+                },
+                "save_demux_fastq": {
+                    "type": "boolean",
+                    "description": "Publish the demultiplexed fastq files.",
+                    "fa_icon": "fas fa-file"
+                },
+                "save_trimmed": {
+                    "type": "boolean",
+                    "description": "Publish the adapter-trimmed fastq files.",
+                    "fa_icon": "fas fa-file"
+                },
+                "save_bam": {
+                    "type": "boolean",
+                    "description": "Publish the BAM files with all aligned reads.",
+                    "fa_icon": "fas fa-file"
+                },
+                "save_dedup_bam": {
+                    "type": "boolean",
+                    "description": "Publish the BAM files with unique (deduplicated) reads.",
+                    "fa_icon": "fas fa-file"
+                }
+            }
+        },
+        "multiqc_options": {
+            "title": "MultiQC options",
+            "type": "object",
+            "fa_icon": "fas fa-chart-bar",
+            "description": "MultiQC report of the read QC, trimming and alignment statistics.",
+            "properties": {
+                "skip_multiqc": {
+                    "type": "boolean",
+                    "description": "Do not run MultiQC.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "multiqc_title": {
+                    "type": "string",
+                    "description": "Title of the MultiQC report.",
+                    "fa_icon": "fas fa-heading"
+                }
+            }
+        },
+        "restart_options": {
+            "title": "Restart and merge options",
+            "type": "object",
+            "fa_icon": "fas fa-redo",
+            "description": "Restart from the outputs of previous runs or merge previous runs.",
+            "properties": {
+                "previous_outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Output directory of a previous run, used with --reporting_only or --start_post_extraction.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "merge_runs": {
+                    "type": "boolean",
+                    "description": "Merge the previous runs listed in the resultDir column of samples.csv.",
+                    "fa_icon": "fas fa-object-group"
+                },
+                "start_post_extraction": {
+                    "type": "boolean",
+                    "description": "Start after methylation extraction (needs the parquet files of the previous run).",
+                    "fa_icon": "fas fa-forward"
+                },
+                "reporting_only": {
+                    "type": "boolean",
+                    "description": "Only regenerate the metrics and the reports.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "bam1_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "alignments/bam directory of a previous run, merged with --bam2_dir.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "bam2_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "alignments/bam directory of a previous run, merged with --bam1_dir.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "save_merged_bam": {
+                    "type": "boolean",
+                    "description": "Publish the merged BAM files.",
+                    "fa_icon": "fas fa-file"
+                }
+            }
+        },
+        "institutional_config_options": {
+            "title": "Institutional config options",
+            "type": "object",
+            "fa_icon": "fas fa-university",
+            "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "properties": {
+                "custom_config_version": {
+                    "type": "string",
+                    "description": "Git commit id for Institutional configs.",
+                    "default": "master",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "custom_config_base": {
+                    "type": "string",
+                    "description": "Base directory for Institutional configs.",
+                    "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+                    "hidden": true,
+                    "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_name": {
+                    "type": "string",
+                    "description": "Institutional config name.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_description": {
+                    "type": "string",
+                    "description": "Institutional config description.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_contact": {
+                    "type": "string",
+                    "description": "Institutional config contact information.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_url": {
+                    "type": "string",
+                    "description": "Institutional config URL link.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-file-import",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "properties": {
+                "version": {
+                    "type": "boolean",
+                    "description": "Display version and exit.",
+                    "fa_icon": "fas fa-question-circle",
+                    "hidden": true
+                },
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "copy",
+                    "description": "Method used to save pipeline results to output directory.",
+                    "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+                    "fa_icon": "fas fa-copy",
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
+                    "hidden": true
+                },
+                "email_on_fail": {
+                    "type": "string",
+                    "description": "Email address for completion summary, only when pipeline fails.",
+                    "fa_icon": "fas fa-exclamation-triangle",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+                    "help_text": "An email address to send a summary email to when the pipeline is completed - ONLY sent if the pipeline does not exit successfully.",
+                    "hidden": true
+                },
+                "plaintext_email": {
+                    "type": "boolean",
+                    "description": "Send plain-text email instead of HTML.",
+                    "fa_icon": "fas fa-remove-format",
+                    "hidden": true
+                },
+                "monochrome_logs": {
+                    "type": "boolean",
+                    "description": "Do not use coloured log outputs.",
+                    "fa_icon": "fas fa-palette",
+                    "hidden": true
+                },
+                "validate_params": {
+                    "type": "boolean",
+                    "description": "Boolean whether to validate parameters against the schema at runtime",
+                    "default": true,
+                    "fa_icon": "fas fa-check-square",
+                    "hidden": true
+                },
+                "trace_report_suffix": {
+                    "type": "string",
+                    "fa_icon": "far fa-calendar",
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "hidden": true
+                },
+                "help": {
+                    "type": ["boolean", "string"],
+                    "description": "Display the help message."
+                },
+                "help_full": {
+                    "type": "boolean",
+                    "description": "Display the full detailed help message."
+                },
+                "show_hidden": {
+                    "type": "boolean",
+                    "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
                 }
             }
         }
-
     },
     "allOf": [
         {
-            "$ref": "#/definitions/help_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/input_options"
+            "$ref": "#/$defs/reference_genome_options"
         },
         {
-            "$ref": "#/definitions/output_options"
+            "$ref": "#/$defs/preprocessing_options"
         },
         {
-            "$ref": "#/definitions/reference_genome_options"
+            "$ref": "#/$defs/methylation_options"
         },
         {
-            "$ref": "#/definitions/analysis_options"
+            "$ref": "#/$defs/cell_calling_options"
         },
         {
-            "$ref": "#/definitions/checkpoint_options"
+            "$ref": "#/$defs/matrix_options"
+        },
+        {
+            "$ref": "#/$defs/output_options"
+        },
+        {
+            "$ref": "#/$defs/multiqc_options"
+        },
+        {
+            "$ref": "#/$defs/restart_options"
+        },
+        {
+            "$ref": "#/$defs/institutional_config_options"
+        },
+        {
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }
