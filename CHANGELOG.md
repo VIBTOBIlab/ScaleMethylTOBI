@@ -1,4 +1,4 @@
-# Version 1.6.0 -
+# Version 1.6.0 - 19-11-2026
 
 - Fixes (most of them inherited from the original ScaleBio pipeline)
   - Methylation calls: read 2 of each read pair was called with the bisulfite strand of the opposite DNA strand (taken from the orientation of the read, `is_reverse`, instead of the strand of the read pair, the bwa-meth `YD` tag). Its CH sites were all called methylated, so these reads were discarded as high-CH reads. They are now used: expect about 1.4× more CG/CH covered per cell, far fewer high-CH reads (`CH_high`, `ch_high_reads_percent`) and almost unchanged methylation levels. Re-run from the methylation calls to get the new values
