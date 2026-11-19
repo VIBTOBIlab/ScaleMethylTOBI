@@ -30,8 +30,20 @@ workflow REPORTING {
     def ch_sample_report_input = ch_report_input
         .join(ch_passing_cell_stats)
         .join(ch_csv_folder)
+    // A sample without passing cells has no matrix: keep it, so that its report shows why
     ch_sample_report_input = with_matrix
-        ? ch_sample_report_input.join(ch_cg_mtx).join(ch_cg_mtx_barcodes)
+        ? ch_sample_report_input
+            .join(ch_cg_mtx, remainder: true)
+            .join(ch_cg_mtx_barcodes, remainder: true)
+            .filter { row -> row[1] != null }
+            .map { row ->
+                def mtx = row[-2]
+                def barcodes = row[-1]
+                if (mtx == null) {
+                    log.warn("Sample '${row[0].id}' has no passing cells: its report has no UMAP and no matrix was created")
+                }
+                row[0..-3] + [mtx ?: [], barcodes ?: []]
+            }
         : ch_sample_report_input.map { row -> row + [[], []] }
 
     GENERATE_SAMPLE_REPORT(

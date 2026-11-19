@@ -173,7 +173,7 @@ def main():
             )
         )
     if args.mtxFile:
-        dp_umap_tab.append(datapane_obj.build_umap_plot(args.mtxFile, met_passing, writeDir))
+        dp_umap_tab.append(datapane_obj.build_umap_plot(args.mtxFile, met_passing, writeDir, args.mtxBarcodes))
 
         dp_page.append(
             dp.Page(

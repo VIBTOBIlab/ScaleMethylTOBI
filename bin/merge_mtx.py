@@ -42,13 +42,17 @@ def merge_mtx(
         with open(mtx_file, "rb") as f, open(barcode_file, "r") as bar:
             matrix = csc_array(mmread(f), dtype=np.float32)  # Ensure the matrix is of type float32
             bcs = [line.strip() for line in bar.readlines()]
-            filtered_bc = [bc for bc in bcs if bc in passing_bc]
-            column_names.extend(filtered_bc)
             indices = [bidx for bidx in range(len(bcs)) if bcs[bidx] in idx_dict]
+            column_names.extend(bcs[bidx] for bidx in indices)
             matrix = matrix[:, indices]
             mtx = hstack([mtx, matrix], format="csc")
 
-    # get indices to re-sort matrix to match barcodes order in all_cells
+    # Re-sort the columns to the order of the barcodes in all_cells, so that the CG and CH
+    # matrices share one column order (the wells arrive in task-completion order)
+    order = sorted(range(len(column_names)), key=lambda i: idx_dict[column_names[i]])
+    mtx = mtx[:, order]
+    column_names = [column_names[i] for i in order]
+
     score_str = ".score" if context == "CG" else ""
     comment = "\nCG context score matrix\n" if context == "CG" else "\nCH context methylation rate matrix\n"
     with gzip.open(f"{sample}.{context}{score_str}.mtx.gz", "wb", compresslevel=6) as f:

@@ -89,7 +89,17 @@ workflow CELL_METRICS {
         .join(ch_passing_stats_by_lib)
         .join(ch_demux_metrics)
 
-    COMBINED_GENERATE_METRICS(ch_library_stats, lib_json.getParent(), lib_json.getName(), workflow.manifest.version)
+    // [ [ id: libName ], [ tss_enrich.csv of all samples ] ] (empty list without TSS enrichment)
+    def ch_tss_by_lib = ch_sample_lib
+        .join(ch_tss_by_sample)
+        .groupTuple(by: 1)
+        .map { _samples, libName, tss -> [[id: libName], tss.flatten()] }
+    // [ [ id: libName ], [ allCells.csv ], [ passingCellSummaryStats.csv ], metrics.json, [ tss_enrich.csv ] ]
+    def ch_combined_metrics_input = ch_library_stats
+        .join(ch_tss_by_lib, remainder: true)
+        .map { meta, allCells, stats, demux, tss -> [meta, allCells, stats, demux, tss ?: []] }
+
+    COMBINED_GENERATE_METRICS(ch_combined_metrics_input, lib_json.getParent(), lib_json.getName(), workflow.manifest.version)
 
     emit:
     all_cells          = GENERATE_METRICS.out.all_cells           // channel: [ meta, allCells.csv ]
