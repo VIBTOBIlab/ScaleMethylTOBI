@@ -479,7 +479,7 @@
                     "python": "3.10.12"
                 },
                 "Workflow": {
-                    "VIBTOBIlab/scalemethyltobi": "v1.6.0"
+                    "VIBTOBIlab/scalemethyltobi": "v1.6.1"
                 }
             }
         ],
