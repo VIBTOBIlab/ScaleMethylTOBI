@@ -43,6 +43,8 @@ nextflow_pipeline {
                 { assert ["SampleA", "SampleC", "SampleD"].every { s -> "samples/genome_bin_matrix/${s}.CG.score.mtx.gz".toString() in published } },
                 { assert ["ScaleMethyl", "LibB"].every { lib -> "reports/libraries/${lib}/${lib}.report.html".toString() in published } },
                 { assert snapshot(
+                    // Software versions without the Nextflow version (the tests run on several Nextflow versions)
+                    removeNextflowVersion("$outputDir/pipeline_info/scalemethyltobi_software_versions.yml"),
                     published,
                     // Cells of each sample (cell names, from allCells.csv)
                     ["SampleA", "SampleB", "SampleC", "SampleD"].collectEntries { s ->
@@ -95,6 +97,7 @@ nextflow_pipeline {
                 { assert passing.every { it[header.indexOf("ch_cov")] == "" && it[header.indexOf("mch_pct")] == "" } },
                 { assert passing.every { it[header.indexOf("cg_cov")] != "" && it[header.indexOf("cg_cov")] == it[header.indexOf("cov")] } },
                 { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/scalemethyltobi_software_versions.yml"),
                     published,
                     passing.collect { it[0] }.sort(),
                     path("$outputDir/reports/samples/SampleA/csv/SampleA.passingCellSummaryStats.csv").readLines(),
