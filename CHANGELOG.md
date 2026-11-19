@@ -1,3 +1,7 @@
+# Version 1.6.1 - 19-11-2026
+
+- Fix: the high-CH read filter (`ch_reads_threshold`) is applied to all CH calls of a read. It was checked after every call, so a read was dropped as soon as more than half of its CH calls _so far_ were methylated (for example when its first CH call was methylated). This removed genuine reads with CH methylation and made mCH too low by roughly 1/(CH sites per read) in relative terms (about 10% on 60-bp test reads, less on longer reads). Expect slightly higher mCH, slightly more CH coverage and slightly lower `CH_high`; mCG is unaffected. Re-run from the methylation calls to get the new values. Inherited from the original ScaleBio pipeline
+
 # Version 1.6.0 - 19-11-2026
 
 - Fixes (most of them inherited from the original ScaleBio pipeline)
