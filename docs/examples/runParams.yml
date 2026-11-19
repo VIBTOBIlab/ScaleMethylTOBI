@@ -1,13 +1,9 @@
-### Sequencing data input can be either a Illumina sequencer RunFolder (bcl)
-# runFolder : 
-### or a directory with fastq files
-fastqDir : "s3://scale.pub/testData/methylation/downsampled_pbmcs_v1.1/"
+### Samplesheet: the samples, their Tn5 barcodes and the fastq files of the library
+### (the example fastq files are read from AWS S3)
+input : ${projectDir}/docs/examples/samples.csv
 
-### A file listing all samples in the analysis with their barcode sequences and sample settings
-samples : ${projectDir}/docs/examples/samples.csv
-
-### Path to a .json file defining the reference genome
-genome : ${projectDir}/docs/examples/genome.json
+### Pre-built reference genome (downloaded by the workflow)
+genome : hg38
 
 ### Value set for the test dataset. Please refer to documentation for an appropriate value to set for your actual experiment
-minUniqCount: 1000
+min_uniq_count: 1000

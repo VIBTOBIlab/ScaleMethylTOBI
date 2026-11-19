@@ -2,65 +2,42 @@
 
 The workflow starts from one of:
 
-| Parameter | Input |
-|---|---|
-| `runFolder` | An Illumina sequencer run folder (bcl files, contains `RunInfo.xml`). Fastq files are generated inside the workflow with `bcl-convert`. |
-| `fastqDir` | A folder with fastq files generated before the workflow, e.g. by a sequencing facility |
-| `bam1Dir` + `bam2Dir` | BAM files from two previous runs, see [Restarting and merging](restarting-and-merging.md#starting-from-bam-files) |
+| Input                                                   | How                                                                                                              |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Fastq files                                             | Listed in the `fastq_1`, `fastq_2`, `index_1`, `index_2` columns of the [samplesheet](samples-csv.md) (`--input`) |
+| BAM files from two previous runs (`bam1_dir`, `bam2_dir`) | See [Restarting and merging](restarting-and-merging.md#starting-from-bam-files)                                   |
+| Outputs of a previous run                               | `reporting_only` / `start_post_extraction`, see [Restarting and merging](restarting-and-merging.md)              |
 
-Give exactly one of `runFolder` and `fastqDir`.
+The workflow does not convert BCL files: generate the fastq files first (see [Generating fastq files](#generating-fastq-files)).
 
 ## Read layout
 
 All supported libraries are read with paired-end reads plus two index reads:
 
-| Read | Content |
-|---|---|
-| Read 1 | Genomic sequence (the first 10 bases are trimmed) |
-| Index 1 (i7) | ScaleBio kit: i7 PCR barcode. sciMETv3: ligation barcode |
-| Index 2 (i5) | i5 PCR barcode |
-| Read 2 | Tn5 barcode (bases 1-8), Tn5 adapter, then genomic sequence |
+| Read         | Content                                                     |
+| ------------ | ----------------------------------------------------------- |
+| Read 1       | Genomic sequence (the first 10 bases are trimmed)           |
+| Index 1 (i7) | ScaleBio kit: i7 PCR barcode. sciMETv3: ligation barcode    |
+| Index 2 (i5) | i5 PCR barcode                                              |
+| Read 2       | Tn5 barcode (bases 1-8), Tn5 adapter, then genomic sequence |
 
 Because the barcodes are in the index reads, the index reads must be kept as fastq files (`I1`, `I2`). The exact positions, lengths and barcode lists are defined in the [library structure](../reference/library-structure.md).
 
-## Starting from a run folder
+## Fastq files
 
-With `runFolder`, the workflow writes a bcl-convert samplesheet from `samples.csv`, the library structure and `RunInfo.xml`, and runs bcl-convert. The samplesheet:
+Each set of fastq files (one library, one sequencing run) is given as a row of the [samplesheet](samples-csv.md#fastq-files) with four files. Requirements:
 
-- lists all combinations of the index sequences (all i7 x all i5 barcodes, or the subsets given in the `libIndex` / `libIndex2` columns of `samples.csv`);
-- writes one set of fastq files per PCR well: per i5 barcode by default, per i7 barcode with `libStructure: "lib_split_on_i7.json"`;
-- reverse-complements Index 2 sequences when `RunInfo.xml` marks Index 2 as reverse complement (NextSeq 1000/2000, NovaSeq X);
-- sets `CreateFastqForIndexReads,1` so the index reads are written as fastq files.
+- **Index reads**: the `index_1` and `index_2` files must contain the sequenced index bases at full length (not masked or shortened).
+- **Matching sets**: the four files of a set must contain the same reads in the same order, as written by bcl-convert / bcl2fastq.
+- **Compressed**: `.fastq.gz` or `.fq.gz`.
 
-The generated samplesheet is saved as `outDir/fastq/samplesheet.csv`. To use your own samplesheet instead, set `fastqSamplesheet`. Extra bcl-convert options go in `bclConvertParams` (default `--no-lane-splitting true`).
+The file names do not matter, and fastq files from facilities can be used as delivered. Barcodes do not need to be in the read headers; `bc_parser` reads them from the index reads and Read 2.
 
-## Starting from fastq files
+### Several runs, lanes or chunks
 
-Set `fastqDir` to the folder with the fastq files. Requirements:
+Every set of fastq files is demultiplexed by a separate `bc_parser` job, and the reads of all sets of a library are combined per sample and Tn5 well afterwards. Add one row per set (see [Several sequencing runs](samples-csv.md#several-sequencing-runs)): separate sequencing runs, separate lanes, or chunks of a large set.
 
-- **File names** follow `<libName>_..._<Read>_...fastq.gz`, where `<libName>` matches the `libName` column of [samples.csv](samples-csv.md) and `<Read>` is `R1`, `R2`, `I1` or `I2`. Everything before the first `_` is taken as the library name, so a `libName` cannot contain `_`.
-- **Index reads**: `I1` and `I2` files must be present and contain the sequenced index bases at full length (not masked or shortened).
-- **Matching sets**: R1, R2, I1 and I2 of a set must contain the same reads in the same order, as written by bcl-convert / bcl2fastq.
-- Files with `Undetermined` in the name are ignored. Files whose library name is not in `samples.csv` are not analysed, but every `*fastq.gz` in the folder goes through FastQC (unless `fastqc: false`).
-
-Barcodes do not need to be in the read headers; `bc_parser` reads them from the index reads and Read 2.
-
-### Renaming files
-
-If the file names do not start with the library name you want (for example facility names such as `5352_01_..._S1_L001_R1_001.fastq.gz`), create a folder of symbolic links with suitable names instead of renaming or copying the files:
-
-```bash
-mkdir -p fastq_links
-for r in R1 R2 I1 I2; do
-  ln -s /path/to/5352_01_Lib_S1_L001_${r}_001.fastq.gz fastq_links/myLib_S1_L001_${r}_001.fastq.gz
-done
-```
-
-and use `fastqDir: /full/path/to/fastq_links`. With Singularity, the folder the links point to must be visible inside the container.
-
-### Large fastq files
-
-The demultiplexing step runs once per set of fastq files. Separate lanes are separate sets (they are merged per cell later). A library delivered as one very large set can be split into chunks so that demultiplexing runs in parallel:
+A library delivered as one very large set can be split into chunks so that demultiplexing runs in parallel:
 
 ```bash
 for r in R1 R2 I1 I2; do
@@ -68,26 +45,43 @@ for r in R1 R2 I1 I2; do
 done
 ```
 
-All four files have the same read order, so the chunks stay in sync, and the chunk names (`myLib_S1_L001_R1_001.part_001.fastq.gz`, ...) are grouped correctly. Point `fastqDir` at `chunks/`.
+All four files have the same read order, so the chunks stay in sync (`myLib_S1_L001_R1_001.part_001.fastq.gz`, ...). List each chunk as a set in the samplesheet.
 
 ### PhiX and other reads without barcodes
 
 Reads without valid barcodes (PhiX spike-in, empty clusters) are discarded during demultiplexing and counted as `BarcodeError` in the [barcode metrics](../outputs/barcode-metrics.md). No pre-filtering is needed.
 
-## Generating fastq files outside the workflow
+## Generating fastq files
 
-When the library is sequenced together with other libraries, the fastq files are often generated by a core facility. Use bcl-convert 3.9 or later and:
+Generate the fastq files with bcl-convert 3.9 or later (or have them generated by a core facility) and:
 
 - set `CreateFastqForIndexReads,1`, otherwise the index reads are lost;
-- give the library a `Sample_ID` that starts with the `libName` used in `samples.csv`.
+- write one set of fastq files per PCR well, or per lane (`--no-lane-splitting true` merges the lanes).
 
 Example samplesheets for the ScaleBio kit are in `docs/examples/samplesheets/`:
 
-| File | Use |
-|---|---|
+| File                                                                                                                  | Use                                       |
+| --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | [ScaleMethyl_small-kit_samplesheet_i5-FWD.csv](../examples/samplesheets/ScaleMethyl_small-kit_samplesheet_i5-FWD.csv) | Small kit; Index 2 in forward orientation |
-| [ScaleMethyl_small-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_small-kit_samplesheet_i5-REV.csv) | Small kit; Index 2 reverse complemented |
-| [ScaleMethyl_large-kit_samplesheet_i5-FWD.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-FWD.csv) | Large kit (8 plates); forward |
-| [ScaleMethyl_large-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-REV.csv) | Large kit; reverse complement |
+| [ScaleMethyl_small-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_small-kit_samplesheet_i5-REV.csv) | Small kit; Index 2 reverse complemented   |
+| [ScaleMethyl_large-kit_samplesheet_i5-FWD.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-FWD.csv) | Large kit (8 plates); forward             |
+| [ScaleMethyl_large-kit_samplesheet_i5-REV.csv](../examples/samplesheets/ScaleMethyl_large-kit_samplesheet_i5-REV.csv) | Large kit; reverse complement             |
 
 These write one set of fastq files per PCR well (not per sample). Use the `REV` version on [instruments](https://knowledge.illumina.com/software/general/software-general-reference_material-list/000001800) that need Index 2 in the opposite orientation. For sciMETv3 samplesheets see [Running sciMETv3](../scimetv3/running.md#bcl-convert-samplesheet).
+
+A bcl-convert samplesheet for your samplesheet, library structure and sequencing run can also be written with `bin/bcl_convert_sheet.py` (in the workflow container):
+
+```bash
+bin/bcl_convert_sheet.py samples.csv references/lib.json /path/to/run/RunInfo.xml --splitFastq > bclconvert_samplesheet.csv
+bcl-convert --sample-sheet bclconvert_samplesheet.csv --bcl-input-directory /path/to/run \
+    --no-lane-splitting true --output-directory fastq
+```
+
+The helper:
+
+- lists all combinations of the index sequences (all i7 x all i5 barcodes, or the subsets given in the `libIndex` / `libIndex2` columns of the samplesheet);
+- writes one set of fastq files per PCR well: per i5 barcode by default, per i7 barcode with `lib_split_on_i7.json`;
+- reverse-complements Index 2 sequences when `RunInfo.xml` marks Index 2 as reverse complement (NextSeq 1000/2000, NovaSeq X);
+- sets `CreateFastqForIndexReads,1`.
+
+Then list the fastq files of each PCR well as a set in the samplesheet.

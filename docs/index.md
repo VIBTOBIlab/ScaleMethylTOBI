@@ -2,27 +2,30 @@
 
 ScaleMethyl is a [Nextflow](https://www.nextflow.io) workflow for single-cell DNA methylation libraries made by combinatorial indexing. It takes sequencing data (an Illumina run folder or fastq files) to per-cell methylation calls, genome-bin matrices and QC reports.
 
-This copy is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at [github.com/ScaleBio/ScaleMethyl](https://github.com/ScaleBio/ScaleMethyl). It adds library structures and documentation for **sciMETv3** libraries (Nichols et al. 2025, *Cell Genomics* 5:100726).
+This copy is based on the ScaleBio Seq Suite: Methylation workflow (v1.3.1), originally available at [github.com/ScaleBio/ScaleMethyl](https://github.com/ScaleBio/ScaleMethyl). It adds library structures and documentation for **sciMETv3** libraries (Nichols et al. 2025, _Cell Genomics_ 5:100726).
 
 ## Supported libraries
 
-| Library type | Library structure (`libStructure`) | Documentation |
-|---|---|---|
-| ScaleBio Single Cell Methylation kit v1.0 / v1.1 | `lib.json` (default) | this site |
-| ScaleBio alpha kit (previous PCR primers) | `prev_pcr/lib.json` | this site |
-| sciMETv3 with the paper's i5 PCR primers (Table S1B/S1C) | `sciMETv3/lib.json` | [sciMETv3](scimetv3/index.md) |
-| sciMETv3 with Illumina TruSeq HT D501-D508 i5 primers | `sciMETv3/lib_D50x.json` | [sciMETv3](scimetv3/index.md) |
+| Library type                                             | Library structure (`lib_structure`) | Documentation                 |
+| -------------------------------------------------------- | ----------------------------------- | ----------------------------- |
+| ScaleBio Single Cell Methylation kit v1.0 / v1.1         | `lib.json` (default)                | this site                     |
+| ScaleBio alpha kit (previous PCR primers)                | `prev_pcr/lib.json`                 | this site                     |
+| sciMETv3 with the paper's i5 PCR primers (Table S1B/S1C) | `sciMETv3/lib.json`                 | [sciMETv3](scimetv3/index.md) |
+| sciMETv3 with Illumina TruSeq HT D501-D508 i5 primers    | `sciMETv3/lib_D50x.json`            | [sciMETv3](scimetv3/index.md) |
 
 ## What the workflow does
 
-1. **Fastq generation** (only when starting from a run folder): Illumina `bcl-convert` writes one set of fastq files per PCR well.
-2. **Barcode demultiplexing**: `bc_parser` finds and error-corrects the cell barcodes and splits reads by sample and Tn5 well.
-3. **Adapter trimming** with `cutadapt`.
-4. **Alignment** with bwa-meth (default), BSBolt or Parabricks (GPU).
-5. **Deduplication**: `sc_dedup` removes PCR duplicates per cell barcode.
-6. **Methylation extraction**: per-cell CG and CH methylation calls.
-7. **Cell calling and QC**: passing cells are selected by unique reads; HTML reports per sample and per library.
-8. **Outputs**: per-cell coverage files (bismark `.cov`, ALLC, Amethyst `.h5`) and genome-bin methylation matrices.
+![Overview of the workflow steps](images/metro_map.svg)
+
+1. **Input**: a [samplesheet](user-guide/samples-csv.md) with the samples and the fastq files of their libraries (one set of R1, R2, I1, I2 files per library and sequencing run).
+2. **Read QC** with FastQC.
+3. **Barcode demultiplexing**: `bc_parser` finds and error-corrects the cell barcodes and splits the reads of each set of fastq files by sample and Tn5 well.
+4. **Adapter trimming** with `cutadapt`; the sequencing runs of a library are combined here.
+5. **Alignment** with bwa-meth (bwa-mem2), against a pre-built genome (`hg38`, `mm39`, downloaded by the workflow) or your own.
+6. **Deduplication**: `sc_dedup` removes PCR duplicates per cell barcode.
+7. **Methylation extraction**: per-cell CG and CH methylation calls.
+8. **Cell calling and QC**: passing cells are selected by unique reads; HTML reports per sample and per library, and a MultiQC report of the read QC, trimming and alignment.
+9. **Outputs**: per-cell coverage files (bismark `.cov`, ALLC, Amethyst `.h5`) and genome-bin methylation matrices.
 
 ## Where to start
 
