@@ -71,7 +71,7 @@ See [QC reports](qc-reports.md) for what the reports show.
 
 ## cell_metrics/: per-sample metrics
 
-The metrics of each sample, merged over its Tn5 wells; the reports are built from them, and `reporting_only` / `merge_runs` read them from previous runs.
+The metrics of each sample, merged over its Tn5 wells; the reports are built from them.
 
 | File                                                                     | Description                                         |
 | ------------------------------------------------------------------------ | --------------------------------------------------- |
@@ -86,7 +86,7 @@ The metrics of each sample, merged over its Tn5 wells; the reports are built fro
 | File                                                   | Description                                                                          |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | `<sample>.<well>.cellInfo.txt`                         | CG, CH and total coverage per cell barcode                                           |
-| `parquet/<sample>.<well>.met_<context>.parquet`        | Methylation calls per cell and position, needed for `start_post_extraction` (`save_parquet`, default) |
+| `parquet/<sample>.<well>.met_<context>.parquet`        | Methylation calls per cell and position (`save_parquet`, default)                                     |
 
 ## bwameth/: alignment and deduplication
 
@@ -94,7 +94,6 @@ The metrics of each sample, merged over its Tn5 wells; the reports are built fro
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `alignments/<sample>.<well>.bam`                        | Aligned reads, only with `save_bam: true`                                                 |
 | `alignments/samtools_stats/<sample>.<well>.flagstat.txt` | `samtools flagstat` of the alignments                                                    |
-| `alignments/merged/<sample>.<well>.bam`                 | Merged BAM files when starting from BAM files, only with `save_merged_bam: true`          |
 | `deduplicated/<sample>.<well>.dedup.bam`                | Deduplicated reads with cell barcodes in the read names, only with `save_dedup_bam: true` |
 | `deduplicated/logs/<sample>.<well>.cell_stats.tsv`      | Reads per cell barcode                                                                    |
 | `deduplicated/logs/<sample>.<well>.dedup_stats.tsv`     | Overall deduplication statistics                                                          |

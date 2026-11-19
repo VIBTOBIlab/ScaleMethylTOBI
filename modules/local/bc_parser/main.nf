@@ -22,7 +22,7 @@ process BC_PARSER {
 
     script:
     // Directory named after the library and the fastq set number (ext.prefix in conf/modules.config)
-    def prefix = task.ext.prefix ?: "${meta.lib}.demux"
+    def prefix = task.ext.prefix ?: "${meta.lib}.${meta.fastq_num}.demux"
     // bc_parser recognises the reads by the _R1_/_R2_/_I1_/_I2_ part of the file names
     def name = "${meta.lib}_S1_L001"
     def reads = ["I1": index1, "I2": index2, "R1": read1, "R2": read2].findAll { _read, fq -> fq }

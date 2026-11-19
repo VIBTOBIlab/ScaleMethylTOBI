@@ -36,10 +36,11 @@ workflow MATRIX_GENERATION {
     def ch_cg_mtx_barcodes = channel.empty()
     if (!params.skip_window_matrix) {
         CREATE_MTX_CG(ch_tiles_cg, ch_cg_pass)
-        // Combine the per-well matrices per sample, with barcodes in the same order as the cell metadata
+        // Combine the per-well matrices per sample (MERGE_MTX orders the columns as the cell metadata).
+        // The files are sorted by name: the order of groupTuple depends on which task finished first
         def ch_cg_mtx_per_sample = CREATE_MTX_CG.out.mtx
             .map { meta, mtx, barcodes, features -> [[id: meta.sample], mtx, barcodes, features] }
-            .groupTuple()
+            .groupTuple(sort: { x, y -> x.name <=> y.name })
             .map { sample, mtx, barcodes, features -> [sample, mtx.flatten(), barcodes.flatten(), features.flatten()] }
             .join(ch_all_cells)
         MERGE_MTX_CG(ch_cg_mtx_per_sample)
@@ -61,7 +62,7 @@ workflow MATRIX_GENERATION {
             CREATE_MTX_CH(ch_tiles_ch, ch_ch_pass)
             def ch_ch_mtx_per_sample = CREATE_MTX_CH.out.mtx
                 .map { meta, mtx, barcodes, features -> [[id: meta.sample], mtx, barcodes, features] }
-                .groupTuple()
+                .groupTuple(sort: { x, y -> x.name <=> y.name })
                 .map { sample, mtx, barcodes, features -> [sample, mtx.flatten(), barcodes.flatten(), features.flatten()] }
                 .join(ch_all_cells)
             MERGE_MTX_CH(ch_ch_mtx_per_sample)

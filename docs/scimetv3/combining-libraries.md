@@ -40,7 +40,7 @@ python $SCRIPT ScaleMethyl.out/samples --inplace
 It prints one line per sample with the number of files and cells and the prefix used. Names that already carry the prefix are left unchanged, so running it twice is safe.
 
 - **Copy mode** (default) writes renamed `.h5` and `allCells.csv` files to the new folder and links the matrix files of `genome_bin_matrix/` into it (only `barcodes.tsv` is rewritten). The new folder can be loaded directly with Amethyst. The `.h5` copies need as much disk space as the originals; check with `du -sh samples/methylation_coverage/amethyst`.
-- **In-place mode** also rewrites the workflow's own `allCells.csv`. If you later rerun part of the workflow on that output folder (e.g. `start_post_extraction`), the renamed cells no longer match the workflow's intermediate files. Prefer copy mode when in doubt.
+- **In-place mode** also rewrites the workflow's own `allCells.csv`. If you later rerun the workflow with `-resume` into that output folder, the renamed cells no longer match the workflow's intermediate files. Prefer copy mode when in doubt.
 
 !!! note "Older Amethyst files"
     In this version of the workflow each cell is a group (`/CG/<barcode>/1`). Scripts written for the older layout, where each cell was a dataset (`/CG/<barcode>`), rename the dataset `1` instead of the cell and break the files.

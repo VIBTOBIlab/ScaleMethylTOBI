@@ -9,6 +9,13 @@
   - `<library>.combinedPassingCellStats.csv` has one `Metric` column and one column per sample (every row was repeated once per sample, and the `Metric` column once per sample) and includes the median TSS enrichment
   - A sample without passing cells no longer stops the pipeline: it gets its sample report (without UMAP) and its read totals in the library metrics, and a warning is printed
   - The read percentages (`Pass`, `BarcodeError`, ...) of the library `demuxMetrics.json` are relative to all reads (they were divided by the total of the last barcode level)
+  - `--skip_ch_context`: the per-cell metrics read the right columns (the CH coverage held the high-CH read count and the CH methylation was empty); without CH calls the CH metrics are empty
+  - The `split` column of the samplesheet works: `true` / `false` values were rejected by the samplesheet validation, and empty cells with `--split_fastq false` stopped bc_parser. It is followed per sample (a sample with `split` `false` under `--split_fastq true` got a wrong Tn5 well and no matrices or coverage files, and the reverse was not split)
+  - A sample name used in two libraries is rejected (the reads of both were combined)
+  - Blacklisted regions (`genomeWindowBlackList`) are cut out of the genome bins: bins inside a blacklisted region are dropped and bins overlapping one are shortened to their parts outside it (the bins kept the region); BED files with more than three columns are accepted
+  - Without `--split_fastq` the `bc_parser/` outputs of the sequencing runs of a library no longer overwrite each other: every fastq set has its own `bc_parser/<libName>.<n>.demux/` folder, as with `--split_fastq`
+  - `-resume` re-uses the trimming, alignment and later tasks: the per-well files are grouped in a fixed order (they were in task completion order, which changed the task inputs), and a change of the `threshold` column re-runs cell calling and the following steps only (bc_parser no longer reads it)
+- Removed: restarting from a previous run (`--reporting_only`, `--start_post_extraction`, `--previous_outdir`), merging previous runs (`--merge_runs` and the `resultDir` samplesheet column) and starting from the BAM files of two runs (`--bam1_dir`, `--bam2_dir`, `--save_merged_bam`). Several sequencing runs of a library are combined from their fastq files (one samplesheet row per run), and a new threshold is tried with `-resume`
 
 # Version 1.5.0 - 19-11-2026
 

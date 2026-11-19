@@ -1,8 +1,7 @@
 //
 // Cells and metrics:
 //   1. Cell calling and per-cell metrics per sample (GENERATE_METRICS)
-//   2. TSS enrichment per sample and Tn5 well (not with --skip_tss_enrich; taken from the
-//      previous run when restarting)
+//   2. TSS enrichment per sample and Tn5 well (not with --skip_tss_enrich)
 //   3. Library metrics: the metrics of all samples of a library, in sample order
 //
 
@@ -17,50 +16,44 @@ workflow CELL_METRICS {
     ch_fragment_hist       // channel: [ meta, fragment_hist.csv ]
     ch_dedup_stats         // channel: [ meta, dedup_stats.csv ]
     ch_demux_metrics       // channel: [ [ id: libName ], metrics.json or [] ]
-    ch_trim_map_stats      // channel: [ meta, mapping_stats.csv, trimming_stats.csv ] (only used with trimming_and_mapping)
-    ch_tss_enrich          // channel: [ meta, tss_enrich.csv or [] ] from a previous run (only used with from_previous_run)
-    ch_dedup_bam           // channel: [ meta, dedup.bam ] per sample and Tn5 well (only used without from_previous_run)
+    ch_trim_map_stats      // channel: [ meta, mapping_stats.csv, trimming_stats.csv ]
+    ch_dedup_bam           // channel: [ meta, dedup.bam ] per sample and Tn5 well
     ch_samples             // channel: [ map ] one per sample, from the samplesheet
     lib_json               // path: library structure definition (.json)
     tss_bed                // channel: path(TSS windows)
     background_bed         // channel: path(background windows)
-    trimming_and_mapping   // boolean: trimming and mapping statistics are available
-    from_previous_run      // boolean: metrics are regenerated from the outputs of a previous run
 
     main:
     //
     // 1. Cell calling and per-cell metrics
     //
     // [ meta, cell_stats, cellInfo, threshold, mapping_stats, trimming_stats ]
-    def ch_metrics_input = trimming_and_mapping
-        ? ch_merged_stats.join(ch_trim_map_stats)
-        : ch_merged_stats.map { meta, cellStats, cellInfo, threshold -> [meta, cellStats, cellInfo, threshold, [], []] }
-
-    GENERATE_METRICS(ch_metrics_input, lib_json.getParent(), lib_json.getName(), trimming_and_mapping)
+    GENERATE_METRICS(ch_merged_stats.join(ch_trim_map_stats), lib_json.getParent(), lib_json.getName())
 
     // [ meta, allCells, fragment_hist, dedup_stats, mapping_stats, trimming_stats ]
-    def ch_report_stats = trimming_and_mapping
-        ? GENERATE_METRICS.out.all_cells.join(ch_fragment_hist).join(ch_dedup_stats).join(ch_trim_map_stats)
-        : GENERATE_METRICS.out.all_cells.join(ch_fragment_hist).join(ch_dedup_stats).map { row -> row + [[], []] }
+    def ch_report_stats = GENERATE_METRICS.out.all_cells
+        .join(ch_fragment_hist)
+        .join(ch_dedup_stats)
+        .join(ch_trim_map_stats)
 
     //
     // 2. TSS enrichment per sample and Tn5 well
     //
-    def ch_tss_by_sample = ch_tss_enrich
-    if (!from_previous_run) {
-        if (!params.skip_tss_enrich) {
-            // [ well meta, allCells, dedup.bam ]
-            def ch_tss_input = GENERATE_METRICS.out.all_cells
-                .combine(ch_dedup_bam.map { meta, bam -> [[id: meta.sample], meta, bam] }, by: 0)
-                .map { _sample, allCells, meta, bam -> [meta, allCells, bam] }
-            TSS_ENRICH(ch_tss_input, tss_bed, background_bed)
-            ch_tss_by_sample = TSS_ENRICH.out.enrich
-                .filter { _meta, csv -> csv.size() > 1 }
-                .map { meta, csv -> [[id: meta.sample], csv] }
-                .groupTuple()
-        } else {
-            ch_tss_by_sample = ch_samples.map { row -> [[id: row.sample], []] }
-        }
+    // [ [ id: sample ], [ tss_enrich.csv ] ] (empty list without TSS enrichment)
+    def ch_tss_by_sample = channel.empty()
+    if (!params.skip_tss_enrich) {
+        // [ well meta, allCells, dedup.bam ]
+        def ch_tss_input = GENERATE_METRICS.out.all_cells
+            .combine(ch_dedup_bam.map { meta, bam -> [[id: meta.sample], meta, bam] }, by: 0)
+            .map { _sample, allCells, meta, bam -> [meta, allCells, bam] }
+        TSS_ENRICH(ch_tss_input, tss_bed, background_bed)
+        // Sorted by file name: the list order is part of the task hash of the consumers (-resume)
+        ch_tss_by_sample = TSS_ENRICH.out.enrich
+            .filter { _meta, csv -> csv.size() > 1 }
+            .map { meta, csv -> [[id: meta.sample], csv] }
+            .groupTuple(sort: { a, b -> a.name <=> b.name })
+    } else {
+        ch_tss_by_sample = ch_samples.map { row -> [[id: row.sample], []] }
     }
 
     // [ meta, allCells, fragment_hist, dedup_stats, mapping_stats, trimming_stats, tss_enrich, libName, barcodes ]
@@ -93,7 +86,7 @@ workflow CELL_METRICS {
     def ch_tss_by_lib = ch_sample_lib
         .join(ch_tss_by_sample)
         .groupTuple(by: 1)
-        .map { _samples, libName, tss -> [[id: libName], tss.flatten()] }
+        .map { samples, libName, tss -> [[id: libName], sortBySample(samples, tss).flatten()] }
     // [ [ id: libName ], [ allCells.csv ], [ passingCellSummaryStats.csv ], metrics.json, [ tss_enrich.csv ] ]
     def ch_combined_metrics_input = ch_library_stats
         .join(ch_tss_by_lib, remainder: true)

@@ -47,12 +47,6 @@ def accept_args() -> argparse.Namespace:
     parser.add_argument("--sample_barcodes", type=str, help="list of all sample barcodes in one string")
     parser.add_argument("--workflow_version", type=str, help="Version of the workflow")
     parser.add_argument(
-        "--reporting_only",
-        action="store_true",
-        default=False,
-        help="Whether this a reporting only run",
-    )
-    parser.add_argument(
         "--passing_cell_stats",
         type=Path,
         help="Path to passing cell stats file",
@@ -104,21 +98,17 @@ def main():
     fragment_df = pd.read_csv(args.fragment_hist, header=None, names=["bin", "count"])
 
     concat_tss_enrich_df = pd.DataFrame()
-    if args.reporting_only:
-        if args.tss_enrich:
-            concat_tss_enrich_df = pd.read_csv(args.tss_enrich[0])
-    else:
-        if args.tss_enrich:
-            tss_enrich_dfs = []
-            for tss_enrich in args.tss_enrich:
-                # Some files may be empty, so we need to check for that
-                if os.stat(tss_enrich).st_size > 1:
-                    tss_enrich_dfs.append(pd.read_csv(tss_enrich))
-            if len(tss_enrich_dfs) > 0:
-                concat_tss_enrich_df = pd.concat(tss_enrich_dfs, ignore_index=True, axis=0)
-                if "tss_counts" in concat_tss_enrich_df.columns:
-                    concat_tss_enrich_df = concat_tss_enrich_df.drop(columns=["tss_counts", "background_counts"])
-                concat_tss_enrich_df.to_csv(f"{args.sample_name}.tss_enrich.csv", index=False)
+    if args.tss_enrich:
+        tss_enrich_dfs = []
+        for tss_enrich in args.tss_enrich:
+            # Some files may be empty, so we need to check for that
+            if os.stat(tss_enrich).st_size > 1:
+                tss_enrich_dfs.append(pd.read_csv(tss_enrich))
+        if len(tss_enrich_dfs) > 0:
+            concat_tss_enrich_df = pd.concat(tss_enrich_dfs, ignore_index=True, axis=0)
+            if "tss_counts" in concat_tss_enrich_df.columns:
+                concat_tss_enrich_df = concat_tss_enrich_df.drop(columns=["tss_counts", "background_counts"])
+            concat_tss_enrich_df.to_csv(f"{args.sample_name}.tss_enrich.csv", index=False)
 
     if not concat_tss_enrich_df.empty:
         if "tss_enrich" not in all_cells.columns:

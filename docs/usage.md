@@ -2,8 +2,7 @@
 
 This page summarises how to run the pipeline. The full user guide is in the [documentation site](index.md):
 [running](user-guide/running.md), [input data](user-guide/input-data.md), [sample table](user-guide/samples-csv.md),
-[reference genomes](user-guide/reference-genomes.md), [parameters](user-guide/parameters.md) and
-[restarting and merging](user-guide/restarting-and-merging.md).
+[reference genomes](user-guide/reference-genomes.md) and [parameters](user-guide/parameters.md).
 
 ## Samplesheet input
 
@@ -25,7 +24,6 @@ PBMC-S2,2E01-3H12,ScaleMethyl,fastq/Lib_R1_001.fastq.gz,fastq/Lib_R2_001.fastq.g
 | `index_1`   | Index 1 (i7) fastq file of the library                                                    |
 | `index_2`   | Index 2 (i5) fastq file of the library                                                    |
 | `threshold` | Optional fixed unique-read threshold for cell calling.                                    |
-| `resultDir` | Output directory of a previous run, only used with `--merge_runs`.                        |
 
 The fastq files belong to the library, which holds all its samples: give them in at least one row per library. Add rows (repeating a sample) for more sequencing runs of a library; the runs are combined per sample and Tn5 well. Relative paths are relative to the samplesheet. The file is validated with [assets/schema_input.json](../assets/schema_input.json). See the [samplesheet](user-guide/samples-csv.md) page for details.
 

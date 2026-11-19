@@ -25,9 +25,9 @@ Column names are case-sensitive.
 | `index_2`   | Index 2 (i5) fastq file                                                     | `run1/Lib_I2_001.fastq.gz` |                                                          |
 | `threshold` | Unique reads above which a barcode is called a cell                         | `1000`                   | calculated, see [cell calling](parameters.md#cell-calling) |
 | `split`     | Split this sample by Tn5 well for parallel processing                       | `true`                   | value of `split_fastq`                                     |
-| `resultDir` | Output folder of a previous run, see [merging runs](restarting-and-merging.md) | `run1.out`            |                                                            |
 
 - `sample` and `libName` may contain only letters, numbers and dashes (`-`), and should start with a letter.
+- A sample name must be unique across libraries: the same name in two libraries is an error.
 - A sample without `barcodes` gets all wells of the library structure, so only one sample per library can leave `barcodes` empty.
 - `libIndex` / `libIndex2` (subsets of the i7 / i5 sequences) are only used by the bcl-convert samplesheet helper, see [Input data](input-data.md#generating-fastq-files).
 

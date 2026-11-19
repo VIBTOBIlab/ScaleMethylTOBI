@@ -9,7 +9,6 @@ process GENERATE_METRICS {
     tuple val(meta), path(cell_stats), path(cell_info_stats), val(threshold), path(mapping_stats), path(trimming_stats)
     path lib_struct_dir         // Directory containing the library structure definition
     val lib_struct_name         // Filename of the library structure definition .json
-    val trimming_and_mapping    // Whether trimming and mapping statistics are available
 
     output:
     tuple val(meta), path("${meta.id}.allCells.csv")                               , emit: all_cells
@@ -20,7 +19,7 @@ process GENERATE_METRICS {
 
     script:
     def args = task.ext.args ?: ''
-    def stats_opts = trimming_and_mapping ? "--trimming_stats ${trimming_stats} --mapping_stats ${mapping_stats}" : ''
+    def stats_opts = "--trimming_stats ${trimming_stats} --mapping_stats ${mapping_stats}"
     """
     generate_metrics.py --sample_name ${meta.id} --threshold ${threshold} --cell_info ${cell_info_stats} --cell_stats ${cell_stats} \
         --library_structure_json ${lib_struct_dir}/${lib_struct_name} ${args} ${stats_opts}

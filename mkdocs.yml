@@ -57,7 +57,6 @@ nav:
       - Sample table: user-guide/samples-csv.md
       - Reference genomes: user-guide/reference-genomes.md
       - Parameters: user-guide/parameters.md
-      - Restarting and merging: user-guide/restarting-and-merging.md
   - Outputs:
       - Output files: outputs/output-files.md
       - QC reports: outputs/qc-reports.md

@@ -43,18 +43,31 @@ workflow FASTQ_DEMUX_TRIM_ALIGN {
     //
     // 2. Demultiplex each fastq set by sample (and Tn5 well) with barcode error correction
     //
-    BC_PARSER(samples_csv, lib_json.getParent(), lib_json.getName(), ch_fastq_sets)
+    // bc_parser does not use the threshold column: leaving it out means that a new threshold
+    // re-runs only cell calling and what follows it with -resume
+    BC_PARSER(samples_csv.map { csv -> dropCsvColumn(csv, 'threshold') }, lib_json.getParent(), lib_json.getName(), ch_fastq_sets)
+
+    // Whether bc_parser splits the reads of each sample by Tn5 well (`split` column of the samples,
+    // which defaults to --split_fastq): [ sample: true/false ]
+    def ch_split = ch_samples
+        .map { row -> [row.sample, row.split == 'true'] }
+        .collect(flat: false)
+        .map { pairs -> pairs.collectEntries() }
 
     // Demultiplexed reads of all fastq sets (sequencing runs), grouped per sample and Tn5 well:
-    // [ [ id: sample.well, sample, well ], [ R1 fastq files ] ] and the same for R2
+    // [ [ id: sample.well, sample, well ], [ R1 fastq files ] ] and the same for R2.
+    // The files are sorted by name, so that R1 and R2 stay in step and the order (part of the
+    // task hash) does not depend on which bc_parser task finished first (-resume)
     def ch_read1 = BC_PARSER.out.read1_fastq
         .transpose()
-        .map { _meta, fq -> [demuxMeta(fq, params.split_fastq), fq] }
-        .groupTuple()
+        .combine(ch_split)
+        .map { _meta, fq, split -> [demuxMeta(fq, split), fq] }
+        .groupTuple(sort: { a, b -> a.name <=> b.name })
     def ch_read2 = BC_PARSER.out.read2_fastq
         .transpose()
-        .map { _meta, fq -> [demuxMeta(fq, params.split_fastq), fq] }
-        .groupTuple()
+        .combine(ch_split)
+        .map { _meta, fq, split -> [demuxMeta(fq, split), fq] }
+        .groupTuple(sort: { a, b -> a.name <=> b.name })
 
     // Warn about samples without passing reads after bc_parser
     ch_samples
@@ -67,9 +80,12 @@ workflow FASTQ_DEMUX_TRIM_ALIGN {
             sample
         }
 
-    // Merge the bc_parser metrics of all fastq sets of a library
+    // Merge the bc_parser metrics of all fastq sets of a library, in fastq set order
     MERGE_DEMUX(
-        BC_PARSER.out.metrics.map { meta, metrics -> [[id: meta.lib], metrics] }.groupTuple(),
+        BC_PARSER.out.metrics
+            .map { meta, metrics -> [[id: meta.lib], meta.fastq_num, metrics] }
+            .groupTuple()
+            .map { lib, nums, metrics -> [lib, [nums, metrics].transpose().sort { pair -> pair[0] }.collect { pair -> pair[1] }] },
         lib_json.getParent(),
         lib_json.getName()
     )
@@ -101,13 +117,31 @@ workflow FASTQ_DEMUX_TRIM_ALIGN {
 */
 
 //
-// Meta map of a demultiplexed fastq file: <sample>_<well>_S<n>_R<1|2>_<fastq num>.fastq.gz
-// With --split_fastq: [ id: sample.well, sample, well ]; otherwise [ id: sample, sample ]
+// CSV text without one of its columns (the values contain no commas or quotes)
 //
-def demuxMeta(fq, splitFastq) {
+def dropCsvColumn(csv, column) {
+    def lines = csv.readLines().findAll { line -> line.trim() }
+    def idx = lines[0].split(',', -1).toList().indexOf(column)
+    if (idx < 0) {
+        return csv
+    }
+    return lines.collect { line ->
+        def fields = line.split(',', -1).toList()
+        fields.removeAt(idx)
+        fields.join(',')
+    }.join('\n') + '\n'
+}
+
+//
+// Meta map of a demultiplexed fastq file:
+//   split by Tn5 well: <sample>_<well>_S<n>_R<1|2>_<fastq num>.fastq.gz -> [ id: sample.well, sample, well ]
+//   not split:         <sample>_S<n>_R<1|2>_<fastq num>.fastq.gz        -> [ id: sample, sample ]
+// split: [ sample: whether bc_parser splits its reads by Tn5 well ]
+//
+def demuxMeta(fq, split) {
     def tok = fq.name.tokenize('_')
     def sample = tok[0]
-    return splitFastq
+    return split[sample]
         ? [id: "${sample}.${tok[1]}".toString(), sample: sample, well: tok[1]]
         : [id: sample, sample: sample]
 }

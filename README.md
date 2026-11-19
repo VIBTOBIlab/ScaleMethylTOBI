@@ -81,7 +81,7 @@ nextflow run VIBTOBIlab/scalemethyltobi \
 The full documentation is in [docs/](docs/index.md):
 
 - [Installation](docs/getting-started/installation.md) and [test run](docs/getting-started/test-run.md)
-- [Running the workflow](docs/user-guide/running.md), [input data](docs/user-guide/input-data.md), [sample table](docs/user-guide/samples-csv.md), [reference genomes](docs/user-guide/reference-genomes.md), [parameters](docs/user-guide/parameters.md), [restarting and merging](docs/user-guide/restarting-and-merging.md)
+- [Running the workflow](docs/user-guide/running.md), [input data](docs/user-guide/input-data.md), [sample table](docs/user-guide/samples-csv.md), [reference genomes](docs/user-guide/reference-genomes.md) and [parameters](docs/user-guide/parameters.md)
 - [Output files](docs/outputs/output-files.md), [QC reports](docs/outputs/qc-reports.md), [barcode metrics](docs/outputs/barcode-metrics.md)
 - [sciMETv3](docs/scimetv3/index.md)
 - [Troubleshooting](docs/reference/troubleshooting.md) and [changelog](CHANGELOG.md)

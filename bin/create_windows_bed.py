@@ -3,6 +3,7 @@
 Generate bed file with genomic windows
 """
 import argparse
+import gzip
 from pathlib import Path
 
 
@@ -25,6 +26,68 @@ def parse_args():
     return parser.parse_args()
 
 
+def read_blacklist(blacklist: Path) -> dict:
+    """
+    Read the blacklisted regions of a BED file (plain or gzipped; only the first three columns are used)
+
+    Args:
+        blacklist: path to the blacklist BED file
+
+    Returns:
+        {chrom: [(start, end), ...]} sorted, with overlapping and adjacent regions merged
+    """
+    regions = {}
+    opener = gzip.open if str(blacklist).endswith(".gz") else open
+    with opener(blacklist, "rt") as bl:
+        for line in bl:
+            fields = line.split()
+            if not fields or fields[0].startswith(("#", "track", "browser")):
+                continue
+            chrom, start, end = fields[0], int(fields[1]), int(fields[2])
+            if end > start:
+                regions.setdefault(chrom, []).append((start, end))
+    merged = {}
+    for chrom, intervals in regions.items():
+        intervals.sort()
+        out = [list(intervals[0])]
+        for start, end in intervals[1:]:
+            if start <= out[-1][1]:
+                out[-1][1] = max(out[-1][1], end)
+            else:
+                out.append([start, end])
+        merged[chrom] = [tuple(interval) for interval in out]
+    return merged
+
+
+def window_pieces(start: int, end: int, regions: list, first: int) -> tuple:
+    """
+    Parts of the window [start, end) outside the blacklisted regions
+
+    Args:
+        start, end: window (0-based, end exclusive)
+        regions: sorted, non-overlapping blacklisted regions of the chromosome
+        first: index of the first region that can overlap this window (windows are visited in order)
+
+    Returns:
+        (list of (start, end) pieces, index of the first region that can overlap the next window)
+    """
+    # Regions that end before this window cannot overlap any later window
+    while first < len(regions) and regions[first][1] <= start:
+        first += 1
+    pieces = []
+    pos = start
+    i = first
+    while i < len(regions) and regions[i][0] < end:
+        bl_start, bl_end = regions[i]
+        if bl_start > pos:
+            pieces.append((pos, bl_start))
+        pos = max(pos, bl_end)
+        i += 1
+    if pos < end:
+        pieces.append((pos, end))
+    return pieces, first
+
+
 def create_windows(
     chrom_sizes_file: Path,
     blacklist: Path,
@@ -33,52 +96,34 @@ def create_windows(
     minimum_window_size: int = 1,
 ):
     """
-    Create a BED file with genomic windows from a window size and a chrom.sizes file
+    Create a BED file with genomic windows from a window size and a chrom.sizes file.
+    Blacklisted regions are cut out of the windows: a window overlapping a blacklisted region is
+    replaced by its parts outside the region, and parts shorter than minimum_window_size are dropped.
 
     Args:
         chrom_sizes_file: path to the chrom.sizes file
-        blacklist: path to the blacklist file
+        blacklist: path to the blacklist BED file (optional)
         window_size: size of the windows
         output_file: path to the output BED file
+        minimum_window_size: minimum size of a window (or part of a window)
     """
-    # Read blacklist regions into a set of tuples
-    blacklist_regions = {}
-    if blacklist:
-        with open(blacklist, "r") as bl:
-            for line in bl:
-                chrom, start, end = line.strip().split()
-                if chrom not in blacklist_regions:
-                    blacklist_regions[chrom] = set()
-                blacklist_regions[chrom].add((int(start), int(end)))
+    blacklist_regions = read_blacklist(blacklist) if blacklist else {}
 
-    # Create windows using the chrom.sizes file
     with open(chrom_sizes_file, "r") as f, open(output_file, "w") as out:
         # for each chromosome, create windows of size window_size starting at 0
         for line in f:
-            chrom, size = line.strip().split()
-            size = int(size)
+            fields = line.split()
+            if not fields:
+                continue
+            chrom, size = fields[0], int(fields[1])
+            regions = blacklist_regions.get(chrom, [])
+            first = 0
             for start in range(0, size, window_size):
                 end = min(start + window_size, size)
-                # Check if the window overlaps with any blacklist region
-                if chrom in blacklist_regions:
-                    for bl_start, bl_end in blacklist_regions[chrom]:
-                        if start <= bl_start <= end:
-                            # blacklist region is in the middle of the window, so split the window
-                            if start <= bl_end <= end:
-                                if bl_end - start >= minimum_window_size:
-                                    out.write(f"{chrom}\t{start}\t{bl_end}\n")
-                                start = bl_end
-                            # blacklist region overlaps the end of the window, so end the window sooner
-                            else:
-                                end = bl_start
-                        # blacklist region overlaps the start of the window, so start the window later
-                        elif start <= bl_end <= end:
-                            start = bl_end
-                        elif bl_start <= start and bl_end >= end:
-                            continue
-                # Write the window to the output file
-                if end - start >= minimum_window_size:
-                    out.write(f"{chrom}\t{start}\t{end}\n")
+                pieces, first = window_pieces(start, end, regions, first)
+                for piece_start, piece_end in pieces:
+                    if piece_end - piece_start >= minimum_window_size:
+                        out.write(f"{chrom}\t{piece_start}\t{piece_end}\n")
 
 
 def main():

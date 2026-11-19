@@ -1,0 +1,106 @@
+nextflow_pipeline {
+
+    name "Pipeline with non-default sample tables and options"
+    script "../main.nf"
+    tag "pipeline"
+
+    // Two libraries, two sequencing runs of one library, a per-sample `split` that differs from
+    // --split_fastq, and a sample without passing cells (fixed threshold above any cell)
+    test("several libraries and sequencing runs, --split_fastq false") {
+        when {
+            params {
+                outdir       = "$outputDir"
+                input        = "${projectDir}/tests/data/samples_multi.csv"
+                split_fastq  = false
+                skip_multiqc = true
+            }
+        }
+        then {
+            def outDir = new File(outputDir)
+            def relPath = { File f -> outDir.toPath().relativize(f.toPath()).toString() }
+            def allFiles = []
+            outDir.eachFileRecurse(groovy.io.FileType.FILES) { allFiles << it }
+            allFiles = allFiles.findAll { !relPath(it).startsWith("pipeline_info/") }.sort { relPath(it) }
+            def published = allFiles.collect { relPath(it) }
+            def demuxReads = { lib -> new groovy.json.JsonSlurper().parse(new File("$outputDir/bc_parser/${lib}.metrics.json")).reads.Pass[0] }
+
+            assertAll(
+                { assert workflow.success },
+                // One bc_parser folder per fastq set (library and sequencing run): nothing overwritten
+                { assert ["ScaleMethyl.0", "ScaleMethyl.1", "LibB.2"].every { set -> "bc_parser/${set}.demux/metrics.json".toString() in published } },
+                // The library metrics add up the reads of both sequencing runs
+                { assert demuxReads("ScaleMethyl") == 2 * demuxReads("LibB") },
+                // SampleA is split by Tn5 well (split=true in its row), the others are not (--split_fastq false)
+                { assert published.any { it ==~ /bwameth\/deduplicated\/logs\/SampleA\.1A0[1-3]\.cell_stats\.tsv/ } },
+                { assert "bwameth/deduplicated/logs/SampleC.cell_stats.tsv" in published },
+                { assert "bwameth/deduplicated/logs/SampleD.cell_stats.tsv" in published },
+                // SampleB has no passing cells: a report, but no matrix, and a warning
+                { assert "reports/samples/SampleB/SampleB.report.html" in published },
+                { assert !published.any { it.startsWith("samples/genome_bin_matrix/SampleB.") } },
+                // Warnings are not in workflow.stdout: read the log of the run (meta/ next to output/)
+                { assert new File(outDir.parentFile, "meta/nextflow.log").text.contains("Sample 'SampleB' has no passing cells") },
+                // The other samples have their matrices, and both libraries their report
+                { assert ["SampleA", "SampleC", "SampleD"].every { s -> "samples/genome_bin_matrix/${s}.CG.score.mtx.gz".toString() in published } },
+                { assert ["ScaleMethyl", "LibB"].every { lib -> "reports/libraries/${lib}/${lib}.report.html".toString() in published } },
+                { assert snapshot(
+                    published,
+                    // Cells of each sample (cell names, from allCells.csv)
+                    ["SampleA", "SampleB", "SampleC", "SampleD"].collectEntries { s ->
+                        def lines = path("$outputDir/samples/${s}.allCells.csv").readLines()
+                        def header = lines[0].split(",").toList()
+                        def passing = lines.drop(1).collect { it.split(",", -1) }.findAll { it[header.indexOf("pass")] == "pass" }
+                        [(s): passing.collect { it[0] }.sort()]
+                    },
+                    // Library summaries (one column per sample)
+                    path("$outputDir/reports/libraries/ScaleMethyl/ScaleMethyl.combinedPassingCellStats.csv").readLines(),
+                    path("$outputDir/reports/libraries/LibB/LibB.combinedPassingCellStats.csv").readLines()
+                ).match() }
+            )
+        }
+    }
+
+    // Optional steps switched off
+    test("--skip_ch_context --skip_tss_enrich --skip_window_matrix --skip_cell_prefix") {
+        when {
+            params {
+                outdir             = "$outputDir"
+                skip_ch_context    = true
+                skip_tss_enrich    = true
+                skip_window_matrix = true
+                skip_cell_prefix   = true
+                skip_multiqc       = true
+            }
+        }
+        then {
+            def outDir = new File(outputDir)
+            def relPath = { File f -> outDir.toPath().relativize(f.toPath()).toString() }
+            def allFiles = []
+            outDir.eachFileRecurse(groovy.io.FileType.FILES) { allFiles << it }
+            allFiles = allFiles.findAll { !relPath(it).startsWith("pipeline_info/") }.sort { relPath(it) }
+            def published = allFiles.collect { relPath(it) }
+            def allCells = path("$outputDir/samples/SampleA.allCells.csv").readLines()
+            def header = allCells[0].split(",").toList()
+            def rows = allCells.drop(1).collect { it.split(",", -1) }
+            def passing = rows.findAll { it[header.indexOf("pass")] == "pass" }
+
+            assertAll(
+                { assert workflow.success },
+                // No CH outputs, no matrices, no TSS enrichment
+                { assert !published.any { it.contains("/CH/") || it.contains(".CH.") || it.contains("met_CH") } },
+                { assert !published.any { it.endsWith(".mtx.gz") } },
+                { assert !published.any { it.endsWith(".tss_enrich.csv") } },
+                // Cells keep their barcodes as names
+                { assert rows.every { !it[0].startsWith("SampleA_") } },
+                // Without CH calls the CH columns are empty, and the CG columns are filled
+                { assert passing.every { it[header.indexOf("ch_cov")] == "" && it[header.indexOf("mch_pct")] == "" } },
+                { assert passing.every { it[header.indexOf("cg_cov")] != "" && it[header.indexOf("cg_cov")] == it[header.indexOf("cov")] } },
+                { assert snapshot(
+                    published,
+                    passing.collect { it[0] }.sort(),
+                    path("$outputDir/reports/samples/SampleA/csv/SampleA.passingCellSummaryStats.csv").readLines(),
+                    path("$outputDir/reports/libraries/ScaleMethyl/ScaleMethyl.combinedPassingCellStats.csv").readLines()
+                ).match() }
+            )
+        }
+    }
+}

@@ -9,8 +9,6 @@ process GENERATE_SAMPLE_REPORT {
     tuple val(meta), path("allCells.csv"), path(fragment_hist), path(dedup_stats), path(mapping_stats), path(trimming_stats), path(tss_enrich), val(library_name), val(sample_barcodes), path(passing_cell_stats), path(csv_folder), path(cg_mtx), path(cg_mtx_barcodes)
     path lib_struct_dir         // Directory containing the library structure definition
     val lib_struct_name         // Filename of the library structure definition .json
-    val trimming_and_mapping    // Whether trimming and mapping statistics are available
-    val reporting_only          // Whether the workflow only regenerates reports (--reporting_only)
     val workflow_version
 
     output:
@@ -21,10 +19,7 @@ process GENERATE_SAMPLE_REPORT {
     tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), emit: versions_python, topic: versions
 
     script:
-    def opts = trimming_and_mapping ? "--trimming_stats ${trimming_stats} --mapping_stats ${mapping_stats} " : ''
-    if (reporting_only) {
-        opts = opts + "--reporting_only"
-    }
+    def opts = "--trimming_stats ${trimming_stats} --mapping_stats ${mapping_stats}"
     def mtx_opts = cg_mtx ? "--mtxFile ${cg_mtx} --mtxBarcodes ${cg_mtx_barcodes}" : ""
     """
     export DATAPANE_CDN_BASE="https://d3j2ibc7el7s1k.cloudfront.net/v0.17.0"

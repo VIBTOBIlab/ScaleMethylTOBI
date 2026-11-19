@@ -43,10 +43,6 @@ params {
     save_trimmed: Boolean
     save_bam: Boolean
     save_dedup_bam: Boolean
-    save_merged_bam: Boolean
-    merge_runs: Boolean
-    start_post_extraction: Boolean
-    reporting_only: Boolean
     skip_multiqc: Boolean
     plaintext_email: Boolean
     monochrome_logs: Boolean

@@ -1,0 +1,7 @@
+sample,barcodes,libName,threshold,split,fastq_1,fastq_2,index_1,index_2
+SampleA,1A01-1A03,ScaleMethyl,,true,fastq/ScaleMethyl_S1_L001_R1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_R2_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I2_001.fastq.gz
+SampleB,1A07-1A09,ScaleMethyl,100000,,fastq/ScaleMethyl_S1_L001_R1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_R2_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I2_001.fastq.gz
+SampleA,1A01-1A03,ScaleMethyl,,true,fastq/run2/ScaleMethyl_S1_L001_R1_001.fastq.gz,fastq/run2/ScaleMethyl_S1_L001_R2_001.fastq.gz,fastq/run2/ScaleMethyl_S1_L001_I1_001.fastq.gz,fastq/run2/ScaleMethyl_S1_L001_I2_001.fastq.gz
+SampleB,1A07-1A09,ScaleMethyl,100000,,fastq/run2/ScaleMethyl_S1_L001_R1_001.fastq.gz,fastq/run2/ScaleMethyl_S1_L001_R2_001.fastq.gz,fastq/run2/ScaleMethyl_S1_L001_I1_001.fastq.gz,fastq/run2/ScaleMethyl_S1_L001_I2_001.fastq.gz
+SampleC,1A01-1A03,LibB,,,fastq/ScaleMethyl_S1_L001_R1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_R2_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I2_001.fastq.gz
+SampleD,1A07-1A09,LibB,,,fastq/ScaleMethyl_S1_L001_R1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_R2_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I1_001.fastq.gz,fastq/ScaleMethyl_S1_L001_I2_001.fastq.gz
