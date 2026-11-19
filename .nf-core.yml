@@ -30,6 +30,8 @@ lint:
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
+    # Pipeline download test removed (fails on missing test_full profile)
+    - .github/workflows/download_pipeline.yml
     - conf/igenomes.config
     - conf/igenomes_ignored.config
     - assets/multiqc_config.yml
