@@ -93,7 +93,7 @@ workflow PIPELINE_INITIALISATION {
     def samplesheet = readSamplesheet(file(input, checkIfExists: true), libStructurePath(params.lib_structure))
 
     emit:
-    samples     = channel.fromList(samplesheet.samples)    // channel: [ map ] one per sample: sample, libName, barcodes, threshold, resultDir
+    samples     = channel.fromList(samplesheet.samples)    // channel: [ map ] one per sample: sample, libName, barcodes, threshold, split
     fastq_sets  = channel.fromList(samplesheet.fastq_sets) // channel: [ meta, fastq_1, fastq_2, index_1, index_2 or [] ] one per library and sequencing run
     samples_csv = channel.value(samplesheet.csv)           // channel: CSV text of the samples (bc_parser input, published as samples.csv)
     versions    = ch_versions
@@ -166,19 +166,6 @@ def validateInputParameters(input) {
     if (params.genome && !params.genomes.containsKey(params.genome)) {
         error("Unknown genome '${params.genome}'. Pre-built genomes: ${params.genomes.keySet().join(', ')}; use --genome_json for other genomes")
     }
-    // Restart modes
-    if ((params.reporting_only || params.start_post_extraction) && !(params.previous_outdir || params.merge_runs)) {
-        error("Must specify --previous_outdir or --merge_runs when --reporting_only or --start_post_extraction is enabled")
-    }
-    if (params.reporting_only && params.start_post_extraction) {
-        error("Cannot specify both --reporting_only and --start_post_extraction")
-    }
-    if (params.merge_runs && params.previous_outdir) {
-        error("Cannot specify both --previous_outdir and --merge_runs")
-    }
-    if ((params.bam1_dir && !params.bam2_dir) || (!params.bam1_dir && params.bam2_dir)) {
-        error("--bam1_dir and --bam2_dir must be specified together")
-    }
 }
 
 //
@@ -186,13 +173,6 @@ def validateInputParameters(input) {
 //
 def libStructurePath(lib_structure) {
     return file("${projectDir}/references/").resolve(lib_structure)
-}
-
-//
-// The workflow starts from fastq files (not from BAM files or the outputs of a previous run)
-//
-def startsFromReads() {
-    return !(params.reporting_only || params.start_post_extraction || (params.bam1_dir && params.bam2_dir))
 }
 
 /*
@@ -205,7 +185,7 @@ def startsFromReads() {
 // Read the samplesheet, validated against assets/schema_input.json.
 // A row is a sample with (optionally) the fastq files of one sequencing run of its library.
 // Returns:
-//   samples:    one map per sample (sample, libName, barcodes, threshold, resultDir, split);
+//   samples:    one map per sample (sample, libName, barcodes, threshold, split);
 //               rows repeating a sample (one per sequencing run) are combined
 //   fastq_sets: one entry per library and sequencing run, see samplesheetFastqSets()
 //   csv:        the samples as CSV text, read by bc_parser and published as samples.csv
@@ -214,7 +194,7 @@ def readSamplesheet(samplesheet, lib_json) {
     def rows = samplesheetToList(samplesheet, "${projectDir}/assets/schema_input.json")
     def defaultBarcodes = sampleBarcodeRange(lib_json)
 
-    def samples = [:]          // "<sample>-<libName>[-<resultDir>]" -> sample map
+    def samples = [:]          // sample name -> sample map
     def defaulted = [:]        // libName -> number of samples using all Tn5 wells
     rows.each { meta, _fastq_1, _fastq_2, _index_1, _index_2 ->
         // Empty cells are [] in samplesheetToList
@@ -223,14 +203,19 @@ def readSamplesheet(samplesheet, lib_json) {
             libName  : meta.lib,
             barcodes : meta.barcodes ?: defaultBarcodes,
             threshold: meta.threshold != [] ? meta.threshold.toString() : '',
-            resultDir: meta.result_dir ?: '',
-            split    : meta.split ?: (params.split_fastq ? 'true' : ''),
+            // true / false for every sample (empty cells take --split_fastq): bc_parser needs a value
+            split    : (meta.split instanceof Boolean ? meta.split : params.split_fastq) ? 'true' : 'false',
         ]
-        def key = "${meta.id}-${meta.lib}" + (params.merge_runs ? "-${sample.resultDir}" : '')
+        // Everything after the samplesheet is named and grouped by sample name, so a sample name
+        // must be unique across libraries
+        def key = meta.id
         if (samples.containsKey(key)) {
+            if (samples[key].libName != sample.libName) {
+                error("Sample ${key} is listed in libraries ${samples[key].libName} and ${sample.libName} in ${samplesheet}: sample names must be unique across libraries")
+            }
             // The same sample listed for another sequencing run: the other columns must match
             if (samples[key] != sample) {
-                error("Duplicate sample/lib name combination with different settings in ${samplesheet}: ${key}")
+                error("Sample ${key} is listed more than once in ${samplesheet} with different settings (barcodes, threshold or split)")
             }
             return
         }
@@ -246,13 +231,11 @@ def readSamplesheet(samplesheet, lib_json) {
         }
     }
 
+    // Every library needs at least one fastq set
     def fastqSets = samplesheetFastqSets(rows, samplesheet)
-    if (startsFromReads()) {
-        // Every library needs at least one fastq set
-        def missing = samples.values().collect { s -> s.libName }.toSet() - fastqSets.collect { set -> set[0].lib }.toSet()
-        if (missing) {
-            error("No fastq files (fastq_1, fastq_2, index_1, index_2 columns) in ${samplesheet} for library: ${missing.join(', ')}")
-        }
+    def missing = samples.values().collect { s -> s.libName }.toSet() - fastqSets.collect { set -> set[0].lib }.toSet()
+    if (missing) {
+        error("No fastq files (fastq_1, fastq_2, index_1, index_2 columns) in ${samplesheet} for library: ${missing.join(', ')}")
     }
 
     return [samples: samples.values().toList(), fastq_sets: fastqSets, csv: samplesCsv(samples.values().toList(), samplesheet)]
@@ -260,16 +243,16 @@ def readSamplesheet(samplesheet, lib_json) {
 
 //
 // The samples as CSV text: the sample columns of the samplesheet in their order, then
-// `barcodes` (if not given) and `split` (with --split_fastq, if not given)
+// `barcodes` and `split` (if not given)
 //
 def samplesCsv(samples, samplesheet) {
-    def known = ['sample', 'barcodes', 'libName', 'threshold', 'resultDir', 'split']
+    def known = ['sample', 'barcodes', 'libName', 'threshold', 'split']
     def header = samplesheet.withReader { reader -> reader.readLine() }.split(',').collect { col -> col.trim() }
     def columns = header.findAll { col -> col in known }
     if (!('barcodes' in columns)) {
         columns << 'barcodes'
     }
-    if (!('split' in columns) && params.split_fastq) {
+    if (!('split' in columns)) {
         columns << 'split'
     }
     def lines = [columns.join(',')] + samples.collect { s -> columns.collect { col -> s[col] }.join(',') }

@@ -80,7 +80,7 @@ def merge(bc_jsons, lib_json, libName):
     for key in summation_metrics:
         master_dict["reads"][key] = [
             summation_metrics[key],
-            f"{round(100*(summation_metrics[key]/total), 1)}%",
+            f"{round(100 * summation_metrics[key] / total_reads, 1) if total_reads else 0.0}%",
         ]
 
     # Initialize dict which will hold combined metrics from "samples" section

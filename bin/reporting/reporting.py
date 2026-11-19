@@ -19,35 +19,55 @@ import scanpy as sc
 # Suppress SettingWithCopyWarning
 pd.options.mode.chained_assignment = None
 
-CELL_STAT_COL_NAMES = [
-    "Number of Passing Cells",
-    "Total Reads in Cells",
-    "Total Passing Reads",
-    "Median Passing Reads per Cell",
-    "Total Unique Reads",
-    "Median Unique Reads per Cell",
-    "Percent Reads in Passing Cells",
-    "Overall Saturation",
-    "Median Mitochondrial Percentage per Cell",
-    "Median CG's Covered per Cell",
-    "Median CH's Covered per Cell",
-    "Median CG Methylation per Cell",
-    "Median CH Methylation per Cell",
-]
+# Display names of the metrics in <sample>.passingCellSummaryStats.csv, in report order
+CELL_STAT_COL_NAMES = {
+    "number_passing_cells": "Number of Passing Cells",
+    "total_reads": "Total Reads in Cells",
+    "total_passing_reads": "Total Passing Reads",
+    "median_passing_reads_per_passing_cell": "Median Passing Reads per Cell",
+    "total_unique_reads": "Total Unique Reads",
+    "median_unique_reads_per_passing_cell": "Median Unique Reads per Cell",
+    "percent_reads_in_passing_cells": "Percent Reads in Passing Cells",
+    "saturation": "Overall Saturation",
+    "median_mito_pct": "Median Mitochondrial Percentage per Cell",
+    "CGcov_median": "Median CG's Covered per Cell",
+    "CHcov_median": "Median CH's Covered per Cell",
+    "CG_mC_Pct_median": "Median CG Methylation per Cell",
+    "CH_mC_Pct_median": "Median CH Methylation per Cell",
+    "median_tss_enrich": "Median TSS Enrichment",
+}
 
 
 class GenerateMetrics:
     # builds the combined passing met stats table csv
-    def build_combined_passing_met_stats_table_csv(out_dir, sample, combined_passing_met: pd.DataFrame):
-        for idx, col_name in enumerate(CELL_STAT_COL_NAMES):
-            combined_passing_met.iloc[idx, combined_passing_met.columns.get_loc("Metric")] = col_name
-        if "median_tss_enrich" in combined_passing_met["Metric"].values:
-            combined_passing_met.iloc[
-                combined_passing_met["Metric"].values == "median_tss_enrich",
-                combined_passing_met.columns.get_loc("Metric"),
-            ] = "Median TSS Enrichment"
-        combined_passing_met = combined_passing_met.iloc[combined_passing_met["Metric"].values != "sample_name",]
-        combined_passing_met.to_csv(f"{out_dir}/{sample}.combinedPassingCellStats.csv", index=False)
+    def build_combined_passing_met_stats_table_csv(
+        out_dir, sample, passing_cell_stats: list[Path], tss_medians: dict | None = None
+    ):
+        """
+        Write <sample>.combinedPassingCellStats.csv: one Metric column and one column per sample
+
+        Args:
+            out_dir: Output directory
+            sample: Library name
+            passing_cell_stats: <sample>.passingCellSummaryStats.csv files (columns Metric, Value)
+            tss_medians: Median TSS enrichment per sample, added when not in passing_cell_stats
+        """
+        columns = []
+        for file in passing_cell_stats:
+            stats = pd.read_csv(file, dtype=str).set_index("Metric")["Value"]
+            # sample_name is empty when the sample has no passing cells
+            name = stats.get("sample_name")
+            if pd.isna(name):
+                name = Path(file).name.split(".passingCellSummaryStats")[0]
+            columns.append(stats.drop("sample_name", errors="ignore").rename(name))
+        combined = pd.concat(columns, axis=1)
+        if tss_medians and "median_tss_enrich" not in combined.index:
+            combined.loc["median_tss_enrich"] = pd.Series(tss_medians)
+        metrics =[m for m in CELL_STAT_COL_NAMES if m in combined.index]
+        metrics += [m for m in combined.index if m not in CELL_STAT_COL_NAMES]
+        combined = combined.loc[metrics].rename(index=CELL_STAT_COL_NAMES)
+        combined.index.name = "Metric"
+        combined.to_csv(f"{out_dir}/{sample}.combinedPassingCellStats.csv")
 
     # Update well plate plot matrix with values from df
     def update_well_plate(df, well_plate, value_col):
@@ -206,7 +226,21 @@ class GenerateMetrics:
             "sample_name",
         ]
         met_df = all_cells[all_cells["pass"] == "pass"].reset_index(drop=True)
-        metric_values = []
+        if met_df.empty:
+            # No passing cells: keep the sample (with empty values) so that its reports are still made
+            print(f"No passing cells for sample {sample}", file=sys.stderr)
+            values = dict.fromkeys(metric_name, np.nan)
+            values.update(
+                number_passing_cells=0,
+                total_reads=all_cells["total_reads"].sum(),
+                total_passing_reads=all_cells["passing_reads"].sum(),
+                total_unique_reads=all_cells["unique_reads"].sum(),
+                percent_reads_in_passing_cells="0.0%",
+                sample_name=sample,
+            )
+            met_stats = pd.DataFrame.from_dict({"Metric": metric_name, "Value": list(values.values())}, dtype="object")
+            met_stats.to_csv(f"{out_dir}/csv/{sample}.passingCellSummaryStats.csv", index=False)
+            return
         ch_is_nan = pd.isna(met_df["ch_cov"].median())
         passing_cells = all_cells[all_cells["pass"] == "pass"]
         metric_values = [
@@ -229,7 +263,8 @@ class GenerateMetrics:
                     3,
                 )
             ),
-            str(round(met_df["mito_reads"].median() * 100, 2)) + "%",
+            # mito_reads is already a percentage (generate_metrics.py)
+            str(round(met_df["mito_reads"].median(), 2)) + "%",
             round(met_df["cg_cov"].median()),
             round(met_df["ch_cov"].median()) if not ch_is_nan else np.nan,
             str(round(met_df["mcg_pct"].median(), 2)) + "%",
@@ -240,13 +275,7 @@ class GenerateMetrics:
             metric_name.append("median_tss_enrich")
             metric_values.append(str(round(met_df["tss_enrich"].median(), 2)))
 
-        if met_df.empty:
-            met_stats = pd.DataFrame.from_dict(
-                {"Metric": metric_name, "Value": [np.nan] * len(metric_name)},
-                dtype="object",
-            )
-        else:
-            met_stats = pd.DataFrame.from_dict({"Metric": metric_name, "Value": metric_values}, dtype="object")
+        met_stats = pd.DataFrame.from_dict({"Metric": metric_name, "Value": metric_values}, dtype="object")
         met_stats.to_csv(f"{out_dir}/csv/{sample}.passingCellSummaryStats.csv", index=False)
 
 
@@ -272,7 +301,8 @@ class Utils:
                             passing_cells.append(row["cell_id"])
 
         if len(passing_cells) == 0:
-            print(f"No passing cells found for {sample}")
+            # Normal for a Tn5 well without passing cells: no output is written for it
+            print(f"No passing cells found for {sample}", file=sys.stderr)
             sys.exit(0)
         return passing_cells
 
@@ -541,11 +571,21 @@ class BuildDatapane:
         self.met_df = all_cells[all_cells["pass"] == "pass"].reset_index(drop=True)
         self.color_map = DatapaneUtils.define_color_map(all_cells)
 
-    def build_umap_plot(self, mtxFile: str, met_passing: list, writeDir: str) -> dp.Plot:
+    def build_umap_plot(self, mtxFile: str, met_passing: pd.DataFrame, writeDir: str, mtxBarcodes: str | None = None) -> dp.Plot:
 
         with gzip.open(mtxFile, "rb") as f:
             matrix = scipy.io.mmread(f)
         adata = sc.AnnData(matrix.transpose().todense())
+        # The matrix columns follow the order of the matrix barcodes file, not of allCells
+        if mtxBarcodes:
+            with open(mtxBarcodes) as f:
+                cell_ids = [line.strip() for line in f if line.strip()]
+        else:
+            cell_ids = met_passing["cell_id"].tolist()
+        if len(cell_ids) != adata.n_obs:
+            raise ValueError(
+                f"{len(cell_ids)} barcodes for {adata.n_obs} matrix columns in {mtxFile}: cannot assign clusters to cells"
+            )
 
         variances = np.var(adata.X, axis=0)
         top_20000_indices = np.argsort(variances)[-20000:]
@@ -561,23 +601,19 @@ class BuildDatapane:
         sc.tl.umap(adata)
 
         # Save the clusters to a TSV file
-        mtx_barcodes_df = met_passing["cell_id"].to_frame()
-        mtx_barcodes_df["cluster"] = adata.obs["leiden"].values
+        mtx_barcodes_df = pd.DataFrame({"cell_id": cell_ids, "cluster": adata.obs["leiden"].values})
         mtx_barcodes_df.to_csv(writeDir / "csv" / f"{self.sample}.report_clusters.tsv", sep="\t", index=False)
 
         # Plot the UMAP embedding colored by cluster
         fig = go.Figure()
-        unique_clusters = adata.obs["leiden"].unique().astype(int)
+        unique_clusters = sorted(adata.obs["leiden"].unique().astype(int))
         colors = []
         # loop through colors if more than 24 clusters
         # Tooltips still exist to find the difference
         while len(unique_clusters) - len(colors) > 24:
             colors.extend(px.colors.qualitative.Dark24)
         colors.extend(px.colors.qualitative.Dark24[: len(unique_clusters)])
-        if len(unique_clusters) == 1:
-            color_map = {unique_clusters[0]: colors[0]}
-        else:
-            color_map = {cluster: colors[i] for i, cluster in enumerate(range(0, max(unique_clusters)))}
+        color_map = {cluster: colors[i] for i, cluster in enumerate(unique_clusters)}
         for cluster, color in color_map.items():
             vals = adata.obs["leiden"].astype(int) == cluster
             fig.add_trace(
@@ -1010,10 +1046,12 @@ class BuildDatapane:
 
         met_stats = pd.read_csv(passingCellStats, index_col=False)
         met_stats = met_stats[met_stats["Metric"] != "sample_name"]
+        # The TSS row is rebuilt below from the cells of this report
+        met_stats = met_stats[met_stats["Metric"] != "median_tss_enrich"]
         met_stats = met_stats.reset_index(drop=True)
         # Reformat metric names and numeric values for HTML report (vs. .csv)
-        for idx, col_name in enumerate(CELL_STAT_COL_NAMES):
-            met_stats.iloc[idx, met_stats.columns.get_loc("Metric")] = col_name
+        met_stats["Metric"] = met_stats["Metric"].map(lambda m: CELL_STAT_COL_NAMES.get(m, m))
+        for idx, col_name in enumerate(met_stats["Metric"]):
             if col_name in [
                 "Number of Passing Cells",
                 "Total Reads in Cells",
@@ -1026,7 +1064,7 @@ class BuildDatapane:
                 "Median Unique Reads",
                 "Median CG's Covered per Cell",
                 "Median CH's Covered per Cell",
-            ]:
+            ] and pd.notna(met_stats.iloc[idx, 1]):
                 met_stats.iloc[idx, 1] = int(met_stats.iloc[idx, 1])
                 met_stats.iloc[idx, 1] = f"{met_stats.iloc[idx, 1]:,}"
             if col_name in [
@@ -1036,7 +1074,6 @@ class BuildDatapane:
             ]:
                 met_stats.iloc[idx, 1] = f"{met_stats.iloc[idx, 1]:.1%}"
         if "tss_enrich" in self.met_df.columns:
-            idx = len(CELL_STAT_COL_NAMES)
             new_row = pd.DataFrame(
                 {"Metric": ["Median TSS Enrichment"], "Value": [f"{self.met_df['tss_enrich'].median():.2f}"]}
             )

@@ -3,6 +3,9 @@
 The tests use [nf-test](https://www.nf-test.com/) and a tiny synthetic dataset in `tests/data/`:
 
 - `tests/default.nf.test`: the whole pipeline with `-profile test`; the snapshot holds every output path and the content of the reproducible outputs. A second test selects the genome by name (`--genome hg38`, with `--genomes_base` pointing to `data/genomes/`, the synthetic test genome packed like the ScaleBio genome archives) and checks that the same cells are found.
+- `tests/options.nf.test`: the whole pipeline with non-default inputs and options:
+  - `samples_multi.csv` with `--split_fastq false`: two libraries (`ScaleMethyl`, `LibB`), two sequencing runs of `ScaleMethyl` (`data/fastq/run2/` links to the same fastq files), `split=true` for one sample only, and a sample without passing cells (`threshold` above any cell). Checks the bc_parser folder of each fastq set, the reads of both runs in the library metrics, which samples are split by Tn5 well, and the report without matrix of the sample without cells.
+  - `--skip_ch_context --skip_tss_enrich --skip_window_matrix --skip_cell_prefix`: no CH, matrix or TSS outputs, barcodes as cell names, and empty CH columns in `allCells.csv`.
 - `modules/local/<module>/tests/main.nf.test`: tests of single modules
 
 nf-test, Nextflow and nf-core/tools are pinned in `dev-environment.yml` (`conda env create -f dev-environment.yml`).

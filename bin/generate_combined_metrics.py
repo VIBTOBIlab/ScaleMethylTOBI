@@ -40,8 +40,45 @@ def accept_args() -> argparse.Namespace:
         help="Path to library structure json file",
     )
     parser.add_argument("--workflow_version", type=str, help="Version of the workflow")
+    parser.add_argument(
+        "--tss_enrich",
+        nargs="*",
+        type=Path,
+        default=[],
+        help="Per-cell TSS enrichment files (<sample>[.<well>].tss_enrich.csv) of the samples of the library",
+    )
     args = parser.parse_args()
     return args
+
+
+def median_tss_enrich(tss_files: list[Path], passing_cells: pd.DataFrame) -> dict:
+    """
+    Median TSS enrichment of the passing cells of each sample
+
+    Args:
+        tss_files: TSS enrichment files; the file name starts with the sample name
+        passing_cells: Passing cells (columns cell_id, sample)
+
+    Returns:
+        {sample: median TSS enrichment, as a string rounded to 2 decimals}
+    """
+    # Longest name first, so that sample "A" does not claim the files of sample "A.1"
+    samples = sorted(passing_cells["sample"].astype(str).unique(), key=len, reverse=True)
+    tss_by_sample = {}
+    for file in tss_files:
+        if file.stat().st_size <= 1:  # no passing cells in this well
+            continue
+        sample = next((s for s in samples if file.name.startswith(f"{s}.")), None)
+        if sample is None:
+            continue
+        tss_by_sample.setdefault(sample, []).append(pd.read_csv(file, usecols=["cell_id", "tss_enrich"]))
+    medians = {}
+    for sample, dfs in tss_by_sample.items():
+        cells = passing_cells.loc[passing_cells["sample"].astype(str) == sample, ["cell_id"]]
+        tss = cells.merge(pd.concat(dfs, ignore_index=True), on="cell_id")["tss_enrich"]
+        if not tss.dropna().empty:
+            medians[sample] = str(round(tss.median(), 2))
+    return medians
 
 
 def main():
@@ -70,18 +107,10 @@ def main():
         args.library_structure_json,
     )
 
-    passing_cell_summary_stat = []
-    for file in args.passing_cell_stats:
-        passing_cell_file = pd.read_csv(file)
-        passing_cell_value = passing_cell_file.rename(
-            {"Value": passing_cell_file[passing_cell_file["Metric"] == "sample_name"]["Value"].to_list()[0]}, axis=1
-        )
-        passing_cell_summary_stat.append(passing_cell_value)
-
-    library_passing_cell_summary_stats = pd.concat(passing_cell_summary_stat, axis=1)
-    library_passing_cell_summary_stats.reset_index(inplace=True)
+    # The per-sample stats are written before TSS enrichment is computed, so add its median here
+    tss_medians = median_tss_enrich(args.tss_enrich, library_methyl_df)
     GenerateMetrics.build_combined_passing_met_stats_table_csv(
-        write_dir, args.library_name, library_passing_cell_summary_stats
+        write_dir, args.library_name, args.passing_cell_stats, tss_medians
     )
 
 

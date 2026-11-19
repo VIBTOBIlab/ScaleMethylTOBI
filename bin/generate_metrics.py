@@ -115,18 +115,24 @@ def construct_all_cells(
     Construct cell stats for this sample from the cell_stats.tsv file
     Also determine threshold for passing cells based on logic from nf-rna
     """
-    met_df = pd.read_csv(
-        cell_info,
-        names=[
-            "cell_id",
-            "cov",
-            "cg_cov",
-            "mcg_pct",
-            "ch_cov",
-            "mch_pct",
-            "ch_high_reads",
-        ],
-    )
+    # cellInfo.csv has no header. With --skip_ch_context met_extract writes no CH columns:
+    # CellID, Coverage, CG_Cov, CG_mC_Pct, CH_high instead of
+    # CellID, Coverage, CG_Cov, CG_mC_Pct, CH_Cov, CH_mC_Pct, CH_high
+    try:
+        met_df = pd.read_csv(cell_info, header=None)
+    except pd.errors.EmptyDataError:
+        # No methylation calls in this sample
+        met_df = pd.DataFrame(columns=range(7))
+    if met_df.shape[1] == 7:
+        met_df.columns = ["cell_id", "cov", "cg_cov", "mcg_pct", "ch_cov", "mch_pct", "ch_high_reads"]
+    elif met_df.shape[1] == 5:
+        met_df.columns = ["cell_id", "cov", "cg_cov", "mcg_pct", "ch_high_reads"]
+        # No CH calls: reported as missing (NaN), not as 0
+        met_df.insert(4, "ch_cov", np.nan)
+        met_df.insert(5, "mch_pct", np.nan)
+    else:
+        print(f"Unexpected number of columns ({met_df.shape[1]}) in {cell_info}", file=sys.stderr)
+        sys.exit(1)
     met_df["sample"] = sample_name
     all_cells = pd.read_csv(cell_stats)
     if len(all_cells) == 0:

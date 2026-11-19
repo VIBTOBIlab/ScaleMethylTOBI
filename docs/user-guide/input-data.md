@@ -1,12 +1,6 @@
 # Input data
 
-The workflow starts from one of:
-
-| Input                                                   | How                                                                                                              |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Fastq files                                             | Listed in the `fastq_1`, `fastq_2`, `index_1`, `index_2` columns of the [samplesheet](samples-csv.md) (`--input`) |
-| BAM files from two previous runs (`bam1_dir`, `bam2_dir`) | See [Restarting and merging](restarting-and-merging.md#starting-from-bam-files)                                   |
-| Outputs of a previous run                               | `reporting_only` / `start_post_extraction`, see [Restarting and merging](restarting-and-merging.md)              |
+The workflow starts from fastq files, listed in the `fastq_1`, `fastq_2`, `index_1` and `index_2` columns of the [samplesheet](samples-csv.md) (`--input`). Several sequencing runs of a library are combined by listing the fastq files of each run (see [Several sequencing runs](samples-csv.md#several-sequencing-runs)).
 
 The workflow does not convert BCL files: generate the fastq files first (see [Generating fastq files](#generating-fastq-files)).
 

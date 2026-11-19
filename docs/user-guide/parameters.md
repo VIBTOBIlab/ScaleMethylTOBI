@@ -41,7 +41,7 @@ Steps and outputs that run by default can be skipped with `skip_*`; intermediate
 | `skip_amethyst`      | `false` | Do not write the per-cell methylation in [Amethyst](https://github.com/lrylaarsdam/amethyst) `.h5` format (Amethyst 1.0.0+)                          |
 | `skip_cell_prefix`   | `false` | Keep the barcodes as cell names in `samples/` (default: `<sample>_<barcode>`, for loading several samples and libraries together in Amethyst) |
 | `skip_window_matrix` | `false` | Do not generate the genome-bin methylation matrices                                                                                                 |
-| `save_parquet`       | `true`  | Publish the per-well methylation calls (`methylation_calls/parquet/`), needed for `start_post_extraction`                                                  |
+| `save_parquet`       | `true`  | Publish the per-well methylation calls (`methylation_calls/parquet/`)                                                                                       |
 | `save_demux_fastq`   | `false` | Publish the demultiplexed sample fastq files                                                                                                        |
 | `save_trimmed`       | `false` | Publish the trimmed fastq files (`cutadapt/`)                                                                                                     |
 | `save_bam`           | `false` | Publish the aligned BAM files                                                                                                                       |
@@ -76,7 +76,7 @@ By default a barcode is called a cell based on its number of unique (deduplicate
 
 A fixed threshold per sample can be set in the `threshold` column of [samples.csv](samples-csv.md); it replaces the calculated one. The sample report plots unique reads against percent unique reads (`reports/samples/<sample>/png/<sample>.complexityTotal.png`), which helps to choose `min_uniq_total` / `max_uniq_total`.
 
-To try a different threshold without rerunning everything, use the [reporting-only workflow](restarting-and-merging.md#reporting-only).
+To try a different threshold, change the `threshold` column and run the same command again with `-resume`: only cell calling and the steps after it are run again.
 
 ## Read processing
 
@@ -97,17 +97,6 @@ Adapter trimming always runs with fixed `cutadapt` settings: the reverse complem
 | --------------- | ------- | --------------------------------------------------------------------------------------------- |
 | `skip_multiqc`  | `false` | Do not make the MultiQC report (FastQC, cutadapt and samtools flagstat, in `outdir/multiqc/`) |
 | `multiqc_title` |         | Title of the MultiQC report                                                                   |
-
-## Restarting and merging
-
-| Parameter               | Default | Description                                                                                 |
-| ----------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| `start_post_extraction` | `false` | Start after methylation extraction; see [Restarting and merging](restarting-and-merging.md) |
-| `reporting_only`        | `false` | Only regenerate cell calling and reports                                                    |
-| `previous_outdir`       |         | Output folder of the previous run                                                           |
-| `merge_runs`            | `false` | Merge several previous runs, using the `resultDir` column in samples.csv                    |
-| `bam1_dir`, `bam2_dir`  |         | Start from the BAM files of two previous runs                                               |
-| `save_merged_bam`       | `false` | Publish the merged BAM files                                                                |
 
 ## Compute resources
 

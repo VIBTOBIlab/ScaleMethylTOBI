@@ -19,8 +19,6 @@ workflow REPORTING {
     ch_cg_mtx              // channel: [ meta, CG.score.mtx.gz ] (only used with_matrix)
     ch_cg_mtx_barcodes     // channel: [ meta, barcodes.tsv ] (only used with_matrix)
     lib_json               // path: library structure definition (.json)
-    trimming_and_mapping   // boolean: trimming and mapping statistics are available
-    reporting_only         // boolean: only the reports are regenerated (--reporting_only)
     with_matrix            // boolean: the CG matrix is available (used to cluster cells in the report)
 
     main:
@@ -30,16 +28,26 @@ workflow REPORTING {
     def ch_sample_report_input = ch_report_input
         .join(ch_passing_cell_stats)
         .join(ch_csv_folder)
+    // A sample without passing cells has no matrix: keep it, so that its report shows why
     ch_sample_report_input = with_matrix
-        ? ch_sample_report_input.join(ch_cg_mtx).join(ch_cg_mtx_barcodes)
+        ? ch_sample_report_input
+            .join(ch_cg_mtx, remainder: true)
+            .join(ch_cg_mtx_barcodes, remainder: true)
+            .filter { row -> row[1] != null }
+            .map { row ->
+                def mtx = row[-2]
+                def barcodes = row[-1]
+                if (mtx == null) {
+                    log.warn("Sample '${row[0].id}' has no passing cells: its report has no UMAP and no matrix was created")
+                }
+                row[0..-3] + [mtx ?: [], barcodes ?: []]
+            }
         : ch_sample_report_input.map { row -> row + [[], []] }
 
     GENERATE_SAMPLE_REPORT(
         ch_sample_report_input,
         lib_json.getParent(),
         lib_json.getName(),
-        trimming_and_mapping,
-        reporting_only,
         workflow.manifest.version
     )
 

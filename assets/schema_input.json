@@ -31,14 +31,8 @@
                 "errorMessage": "Threshold must be a positive integer (unique reads per cell)",
                 "meta": ["threshold"]
             },
-            "resultDir": {
-                "type": "string",
-                "errorMessage": "Output directory of a previous run (used with --merged)",
-                "meta": ["result_dir"]
-            },
             "split": {
-                "type": "string",
-                "pattern": "^(true|false)?$",
+                "type": "boolean",
                 "errorMessage": "split must be true or false",
                 "meta": ["split"]
             },

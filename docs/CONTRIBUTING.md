@@ -180,16 +180,14 @@ The pipeline follows the nf-core template (`nf-core pipelines create`, see `.nf-
 
 The main workflow runs these local subworkflows:
 
-| Step | Subworkflow              | Content                                                                                  |
-| ---- | ------------------------ | ---------------------------------------------------------------------------------------- |
-| 1    | `PREPARE_GENOME`         | Pre-built genome (download) or `genome.json`; chrom.sizes and genome bins                |
-| 2    | `FASTQ_DEMUX_TRIM_ALIGN` | FastQC, `bc_parser` per fastq set, cutadapt (sequencing runs combined), bwa-meth         |
-| 2    | `BAM_MERGE_RUNS`         | Instead of the above: merge the BAM files of two runs (`--bam1_dir`, `--bam2_dir`)       |
-| 3    | `BAM_DEDUP_EXTRACT`      | `sc_dedup`, methylation calls, per-sample statistics                                     |
-| 2-3  | `LOAD_PREVIOUS_RESULTS`  | Instead of 2-3: outputs of previous runs (`--reporting_only`, `--start_post_extraction`) |
-| 4    | `CELL_METRICS`           | Cell calling, per-cell metrics, TSS enrichment, library metrics                          |
-| 5    | `MATRIX_GENERATION`      | Genome-bin matrices and per-cell coverage files                                          |
-| 6    | `REPORTING`              | Sample and library html reports (MultiQC runs in the main workflow)                      |
+| Step | Subworkflow              | Content                                                                          |
+| ---- | ------------------------ | -------------------------------------------------------------------------------- |
+| 1    | `PREPARE_GENOME`         | Pre-built genome (download) or `genome.json`; chrom.sizes and genome bins        |
+| 2    | `FASTQ_DEMUX_TRIM_ALIGN` | FastQC, `bc_parser` per fastq set, cutadapt (sequencing runs combined), bwa-meth |
+| 3    | `BAM_DEDUP_EXTRACT`      | `sc_dedup`, methylation calls, per-sample statistics                             |
+| 4    | `CELL_METRICS`           | Cell calling, per-cell metrics, TSS enrichment, library metrics                  |
+| 5    | `MATRIX_GENERATION`      | Genome-bin matrices and per-cell coverage files                                  |
+| 6    | `REPORTING`              | Sample and library html reports (MultiQC runs in the main workflow)              |
 
 Conventions:
 

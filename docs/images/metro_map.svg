@@ -8,9 +8,6 @@
 <path d="M 110,300 L 1110,300" fill="none" stroke="#2E86C1" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M 1110,300 L 1180,190 L 1260,190 L 1430,190" fill="none" stroke="#8E44AD" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M 1110,300 L 1180,410 L 1260,410 L 1430,410" fill="none" stroke="#27AE60" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M 750,540 L 750,300" fill="none" stroke="#C0392B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
-<path d="M 1050,540 L 1050,300" fill="none" stroke="#C0392B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
-<path d="M 1260,540 L 1260,410" fill="none" stroke="#C0392B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
 <rect x="56.75" y="283" width="106.5" height="34" rx="17" fill="#2E86C1"/>
 <text x="110" y="306" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">samplesheet</text>
 <circle cx="300" cy="420" r="13" fill="#ffffff" stroke="#1B2631" stroke-width="5"/>
@@ -46,9 +43,6 @@
 <text x="1260" y="380" font-size="14" font-weight="normal" fill="#566573" text-anchor="middle">CG / CH .mtx</text>
 <rect x="1374.0" y="393" width="132.0" height="34" rx="17" fill="#27AE60"/>
 <text x="1440" y="416" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">.cov .allc .h5</text>
-<text x="750" y="568" font-size="14" font-family="Menlo, Consolas, monospace" fill="#C0392B" text-anchor="middle">--bam1_dir / --bam2_dir</text>
-<text x="1050" y="568" font-size="14" font-family="Menlo, Consolas, monospace" fill="#C0392B" text-anchor="middle">--reporting_only</text>
-<text x="1260" y="568" font-size="14" font-family="Menlo, Consolas, monospace" fill="#C0392B" text-anchor="middle">--start_post_extraction</text>
 <path d="M 40,610 L 86,610" fill="none" stroke="#2E86C1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="98" y="615" font-size="14" fill="#1B2631">Main workflow</text>
 <path d="M 239,610 L 285,610" fill="none" stroke="#E67E22" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -57,6 +51,4 @@
 <text x="472" y="615" font-size="14" fill="#1B2631">Reports</text>
 <path d="M 565,610 L 611,610" fill="none" stroke="#27AE60" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="623" y="615" font-size="14" fill="#1B2631">Matrices and coverage files</text>
-<path d="M 876,610 L 922,610" fill="none" stroke="#C0392B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
-<text x="934" y="615" font-size="14" fill="#1B2631">Restart from a previous run</text>
 </svg>

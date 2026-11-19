@@ -75,7 +75,27 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { it.contains("Duplicate sample/lib name combination with different settings") } }
+                { assert function.stdout.any { it.contains("Sample SampleA is listed more than once") && it.contains("with different settings") } }
+            )
+        }
+    }
+
+    test("Rejects a sample name used in two libraries") {
+        function "readSamplesheet"
+        when {
+            function {
+                """
+                def sheet = file("${workDir}/two_libs.csv")
+                sheet.text = "sample,barcodes,libName\\nSampleA,1A01-1A03,ScaleMethyl\\nSampleA,1A01-1A03,LibB\\n"
+                input[0] = sheet
+                input[1] = file("${projectDir}/references/lib.json")
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { it.contains("Sample SampleA is listed in libraries ScaleMethyl and LibB") } }
             )
         }
     }

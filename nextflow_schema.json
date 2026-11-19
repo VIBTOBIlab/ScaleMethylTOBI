@@ -253,7 +253,7 @@
                 "save_parquet": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Methylation calls (parquet), needed to restart with --start_post_extraction.",
+                    "description": "Publish the methylation calls per cell and position (parquet).",
                     "fa_icon": "fas fa-file"
                 },
                 "save_demux_fastq": {
@@ -293,55 +293,6 @@
                     "type": "string",
                     "description": "Title of the MultiQC report.",
                     "fa_icon": "fas fa-heading"
-                }
-            }
-        },
-        "restart_options": {
-            "title": "Restart and merge options",
-            "type": "object",
-            "fa_icon": "fas fa-redo",
-            "description": "Restart from the outputs of previous runs or merge previous runs.",
-            "properties": {
-                "previous_outdir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "Output directory of a previous run, used with --reporting_only or --start_post_extraction.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "merge_runs": {
-                    "type": "boolean",
-                    "description": "Merge the previous runs listed in the resultDir column of samples.csv.",
-                    "fa_icon": "fas fa-object-group"
-                },
-                "start_post_extraction": {
-                    "type": "boolean",
-                    "description": "Start after methylation extraction (needs the parquet files of the previous run).",
-                    "fa_icon": "fas fa-forward"
-                },
-                "reporting_only": {
-                    "type": "boolean",
-                    "description": "Only regenerate the metrics and the reports.",
-                    "fa_icon": "fas fa-file-alt"
-                },
-                "bam1_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "alignments/bam directory of a previous run, merged with --bam2_dir.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "bam2_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "alignments/bam directory of a previous run, merged with --bam1_dir.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "save_merged_bam": {
-                    "type": "boolean",
-                    "description": "Publish the merged BAM files.",
-                    "fa_icon": "fas fa-file"
                 }
             }
         },
@@ -487,9 +438,6 @@
         },
         {
             "$ref": "#/$defs/multiqc_options"
-        },
-        {
-            "$ref": "#/$defs/restart_options"
         },
         {
             "$ref": "#/$defs/institutional_config_options"
