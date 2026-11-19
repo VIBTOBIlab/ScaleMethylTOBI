@@ -1,3 +1,5 @@
+# Version 1.6.0 -
+
 # Version 1.5.0 - 19-11-2026
 
 - Pipeline restructured with the nf-core template (nf-core/tools 4.2.2) as `VIBTOBIlab/scalemethyltobi`; the output files are unchanged, only their folders (see below)
